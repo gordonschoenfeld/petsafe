@@ -147,13 +147,15 @@ def get_time() -> str:
         return time
 
 
-def get_feeder_number_flex() -> int:
+def get_feeder_number_flex() -> int | str:
     feeder_number = input(
-        "Enter feeder number: [1 Under ***REMOVED***, 2 ***REMOVED***, 3 both]: ").strip()
+        "Enter feeder number: [1. Under ***REMOVED***, 2. ***REMOVED***, A. all]: ").strip()
     # reject invalid feeder number
-    if feeder_number not in ['1', '2', '3']:
-        print("Invalid feeder number. Please enter 1, 2, or 3.")
+    if feeder_number.lower() not in ['1', '2', 'a', 'all']:
+        print("Invalid feeder number. Please enter 1, 2, or A.")
         return get_feeder_number_flex()  # Retry
+    if feeder_number.lower() in ['all', 'a']:
+        return "all"
     else:
         return int(feeder_number)
 
@@ -176,7 +178,7 @@ def get_amount() -> int | str:
     if not amount.isdigit() or int(amount) < 1 and amount not in ['auto', 'AUTO', 'Auto', 'a', 'A']:
         print("Invalid amount. Please enter a positive integer, or 'AUTO'.")
         return get_amount()  # Retry
-    if amount in ['auto', 'AUTO', 'Auto', 'a', 'A']:
+    if amount.lower() in ['auto', 'a']:
         return "auto"
     else:
         return int(amount)
@@ -422,7 +424,7 @@ def task_input() -> None:
         time = get_time()
         feeder_number = get_feeder_number_flex()
         amount = get_amount()
-        if feeder_number == 3:
+        if feeder_number == "all":
             add_schedule(time, amount, 1)
             add_schedule(time, amount, 2)
         else:
@@ -440,7 +442,7 @@ def task_input() -> None:
         time = get_time()
 
         # Call remove function. Validation is handled inside function.
-        if feeder_number == 3:
+        if feeder_number == "all":
             remove_schedule(time, 1, clean_data, all_schedules)
             remove_schedule(time, 2, clean_data, all_schedules)
         else:
