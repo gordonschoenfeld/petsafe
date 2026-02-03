@@ -273,48 +273,47 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         # Get lists from both sources and combine both lists
         cron_schedules: list[tuple] = get_cron_schedules()
         system_schedules: list[tuple] = get_system_schedules()
-        all_schedules_display: list[tuple] = cron_schedules + system_schedules
-        all_schedules_clean: list[tuple] = all_schedules_display
+        all_schedules: list[tuple] = cron_schedules + system_schedules
+        complete_symbol: str = "●"    # alts: █ ● ▰
+        incomplete_symbol: str = "○"  # alts: ░ ○ ▱
 
         # Convert amount from units to cups for display
         cups_per_unit = {1: "1/8 cup", 2: "1/4 cup", 3: "3/8 cup", 4: "1/2 cup",
                          5: "5/8 cup", 6: "3/4 cup", 7: "7/8 cup", 8: "1 cup"}
-        for i in range(len(all_schedules_display)):
-            feeder_name, time, amount, source = all_schedules_display[i]
+        for i in range(len(all_schedules)):
+            feeder_name, time, amount, source = all_schedules[i]
             if str(amount).isdigit():
                 amount_str: str = cups_per_unit.get(amount, f"{amount}")
-                amount_str += " [" \
-                    + int(amount) * "█" + (8 - int(amount)) * "-" \
-                    + "]"
+                amount_bar = int(amount) * complete_symbol \
+                    + (8 - int(amount)) * incomplete_symbol
             else:
                 amount_str = "ERROR"
-            all_schedules_display[i] = (feeder_name, time, amount_str, source)
+            all_schedules[i] = (
+                feeder_name, time, amount_str, amount_bar, source)
 
         # --- PRINT TABLE ---
         # Define column widths
-        # TODO: add bar graph of how much each feeding is [XX      ]
-
-        w_name, w_time, w_amount, w_type = 20, 7, 18, 11
+        w_name, w_time, w_amount, w_type = 20, 7, 8, 11
 
         # Print Header
         print("")
-        print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Amount':<{w_amount}} | {'Note':<{w_type}}")
-        print("-" * (w_name + w_time + w_amount + w_type + 9))
+        print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Amount':<{w_amount + 8}} | {'Note':<{w_type}}")
+        print("-" * (w_name + w_time + w_amount + w_type + 18))
 
-        if not all_schedules_display:
+        if not all_schedules:
             print("No feeder schedules found.")
         else:
             # Sort by Time asc, and secondarily by feeder name desc
-            temp_rows = sorted(all_schedules_display,
+            temp_rows = sorted(all_schedules,
                                key=lambda x: x[0], reverse=True)
             rows = sorted(temp_rows, key=lambda x: x[1])
 
             for row in rows:
                 print(
-                    f"{row[0]:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
+                    f"{row[0]:<{w_name}} | {row[1]:<{w_time}} | {row[2]} {row[3]:<{w_amount}} | {row[4]:<{w_type}}")
         print("")
 
-        return all_schedules_clean
+        return all_schedules
 
     # --- MAIN VIEW SCHEDULE LOGIC ---
     all_schedules = print_all_schedules()
@@ -362,11 +361,8 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
     # Validation
     feeder_id: int = get_id_by_number(clean_data, feeder_number)
 
-    print(f"DEBUG  5 | {all_schedules=}")
-    print(f"DUBUG  8 | {clean_data=}")
     matching_result_app = [item for item in all_schedules if item[0] == clean_data[feeder_id]['name'] and item[1]
-                           == time and item[3] == "App"]
-    print(f"DEBUG 10 | {matching_result_app=}")
+                           == time and item[4] == "Set in app"]
     if matching_result_app:
         print(
             f"❌ Cannot remove schedule at {time} for Feeder #{feeder_number}.")
@@ -375,7 +371,6 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
 
     matching_result = [item for item in all_schedules if item[0] == clean_data[feeder_id]['name'] and item[1]
                        == time]
-    print(f"DEBUG 12 | {matching_result=}")
     if not matching_result:
         print(
             f"❌ No schedule found at {time} for Feeder #{feeder_number}. Cannot remove.")
@@ -387,7 +382,6 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
     Calls the remove_scheduled_feed.sh script to delete a specific cron job.
     Returns True if successful, False if the job wasn't found or an error occurred.
     """
-    print(f"DEBUG 20 | {feeder_number=} {time=}")
     try:
         # We use check=True so that if the bash script exits with 1,
         # it raises a CalledProcessError automatically.
