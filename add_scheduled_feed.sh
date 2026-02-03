@@ -46,7 +46,5 @@ if crontab -l 2>/dev/null | grep -Fq "$FULL_COMMAND"; then
 else
     (crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -
     echo "Success! Cron job created:"
-    echo "   Time:   $HOUR:$MINUTE daily"
-    echo "   Feeder: $FEEDER_NUM"
-    echo "   Amount: $AMOUNT"
+    echo "   Time:   $HOUR:$MINUTE daily | Feeder #: $FEEDER_NUM | Amount: $AMOUNT"
 fi

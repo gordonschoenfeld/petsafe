@@ -123,6 +123,16 @@ def fetch_feeder_info() -> dict:
         # traceback.print_exc()
 
 
+def get_id_by_number(clean_data, target_number) -> int | None:
+    # Force target to a string to match the data format ('1' vs 1)
+    target_number = str(target_number)
+
+    for feeder_id, data in clean_data.items():
+        if data['feeder_number'] == target_number:
+            return feeder_id
+    return None  # Return None if not found
+
+
 # --- INPUT VALIDATION SUB-FUNCTIONS ---
 def get_time() -> str:
     time = input(
@@ -139,7 +149,7 @@ def get_time() -> str:
 
 def get_feeder_number_flex() -> int:
     feeder_number = input(
-        "Enter feeder number to add schedule to: [1 Under ***REMOVED***, 2 ***REMOVED***, 3 both]: ").strip()
+        "Enter feeder number: [1 Under ***REMOVED***, 2 ***REMOVED***, 3 both]: ").strip()
     # reject invalid feeder number
     if feeder_number not in ['1', '2', '3']:
         print("Invalid feeder number. Please enter 1, 2, or 3.")
@@ -223,7 +233,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         # Extract Arguments
         # Based on set_schedule.sh, arguments are the LAST two items: [ID, AMOUNT]
         try:
-            amount = parts[-1]
+            amount = int(parts[-1])
             feeder_id = parts[-2]
         except IndexError:
             return None
@@ -256,101 +266,64 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
     # --- PRINT ALL SCHEDULES ---
     def print_all_schedules() -> list[tuple]:
+        # NOTE Schedule format: (feeder_name: str, time: str, amount: str, source: str)
+
         # Get lists from both sources and combine both lists
-        # Output format: (feeder_name, time, amount, source)
         cron_schedules: list[tuple] = get_cron_schedules()
         system_schedules: list[tuple] = get_system_schedules()
-        all_schedules: list[tuple] = cron_schedules + system_schedules
+        all_schedules_display: list[tuple] = cron_schedules + system_schedules
+        all_schedules_clean: list[tuple] = all_schedules_display
 
         # Convert amount from units to cups for display
         cups_per_unit = {1: "1/8 cup", 2: "1/4 cup", 3: "3/8 cup", 4: "1/2 cup",
                          5: "5/8 cup", 6: "3/4 cup", 7: "7/8 cup", 8: "1 cup"}
-        for i in range(len(all_schedules)):
-            feeder_name, time, amount, source = all_schedules[i]
+        for i in range(len(all_schedules_display)):
+            feeder_name, time, amount, source = all_schedules_display[i]
             if str(amount).isdigit():
-                amount_str = cups_per_unit.get(amount)
+                amount_str: str = cups_per_unit.get(amount, f"{amount}")
+                amount_str += " [" \
+                    + int(amount) * "█" + (8 - int(amount)) * "-" \
+                    + "]"
             else:
                 amount_str = "ERROR"
-            all_schedules[i] = (feeder_name, time, amount_str, source)
+            all_schedules_display[i] = (feeder_name, time, amount_str, source)
 
         # --- PRINT TABLE ---
         # Define column widths
-        w_name, w_time, w_amount, w_type = 20, 7, 8, 11
+        # TODO: add bar graph of how much each feeding is [XX      ]
+
+        w_name, w_time, w_amount, w_type = 20, 7, 18, 11
 
         # Print Header
         print("")
         print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Amount':<{w_amount}} | {'Note':<{w_type}}")
         print("-" * (w_name + w_time + w_amount + w_type + 9))
 
-        if not all_schedules:
+        if not all_schedules_display:
             print("No feeder schedules found.")
         else:
-            # Sort by Time (HH:MM)
-            rows = sorted(all_schedules, key=lambda x: (x[0], x[1]))
+            # Sort by Time asc, and secondarily by feeder name desc
+            temp_rows = sorted(all_schedules_display,
+                               key=lambda x: x[0], reverse=True)
+            rows = sorted(temp_rows, key=lambda x: x[1])
+
             for row in rows:
                 print(
                     f"{row[0]:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
+        print("")
 
-        return all_schedules
+        return all_schedules_clean
 
     # --- MAIN VIEW SCHEDULE LOGIC ---
-    print_all_schedules()
-
-
-# --- MAIN INPUT FUNCTION ---
-def task_input() -> None:
-    action = input(
-        "Select action: Add (A), Remove (R), View (V), Exit (X): ").strip().lower()
-
-    # INPUT: ADD ACTION
-    if action in ['add', 'a']:
-        time = get_time()
-        feeder_number = get_feeder_number_flex()
-        amount = get_amount()
-        if feeder_number == 3:
-            add_schedule(time, amount, 1)
-            add_schedule(time, amount, 2)
-        else:
-            add_schedule(time, amount, feeder_number)
-
-    # INPUT: REMOVE ACTION
-    elif action in ['remove', 'r', 'rm', 'd', 'del', 'delete']:
-        # Print current schedules, for user reference
-        print("Current schedules:")
-        clean_data = fetch_feeder_info()
-        view_schedule(clean_data)
-
-        # Prompt for machine & time to remove
-        feeder_number = get_feeder_number_flex()
-        time = get_time()
-
-        # Call remove function. Validation is handled inside function.
-        if feeder_number == 3:
-            remove_schedule(time, 1, clean_data)
-            remove_schedule(time, 2, clean_data)
-        else:
-            remove_schedule(time, feeder_number, clean_data)
-
-    # INPUT: VIEW ACTION
-    elif action in ['view', 'v', 'list', 'show']:
-        view_schedule(fetch_feeder_info())
-
-    # INPUT: EXIT ACTION
-    elif action in ['exit', 'x', 'quit', 'q']:
-        print("Exiting program.")
-        exit()
-
-    # OTHER: reject invalid action
-    else:
-        print("Invalid action. Please enter A, R, V, or X.")
-        return task_input()  # Retry
+    all_schedules = print_all_schedules()
+    return all_schedules
 
 
 # -- ADD SCHEDULE FUNCTION --
 def add_schedule(time: str, amount: int | str, feeder_number: int) -> None:
     amount = str(amount)
     feeder_number = str(feeder_number)
-    script_path = "./set_schedule.sh"
+    script_path = "./add_scheduled_feed.sh"
 
     # 1. Translate 'auto' amount
     if amount == "auto":
@@ -382,33 +355,42 @@ def add_schedule(time: str, amount: int | str, feeder_number: int) -> None:
 
 # -- REMOVE SCHEDULE FUNCTION --
 def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> None:
+    # NOTE Schedule format: (feeder_name: str, time: str, amount: str, source: str)
+
     # Validation
-    schedule_key = (time, feeder_number)
-    if schedule_key in all_schedules and all_schedules[schedule_key]["source"] == "App":
+    feeder_id: int = get_id_by_number(clean_data, feeder_number)
+
+    print(f"DEBUG  5 | {all_schedules=}")
+    print(f"DUBUG  8 | {clean_data=}")
+    matching_result_app = [item for item in all_schedules if item[0] == clean_data[feeder_id]['name'] and item[1]
+                           == time and item[3] == "App"]
+    print(f"DEBUG 10 | {matching_result_app=}")
+    if matching_result_app:
         print(
             f"❌ Cannot remove schedule at {time} for Feeder #{feeder_number}.")
-        print(f"Please remove it via the PetSafe SmartFeed app.")
+        print(f"Please remove it via the PetSafe SmartFeed app 📲.")
         return
 
-    if (time, feeder_number) not in all_schedules:
+    matching_result = [item for item in all_schedules if item[0] == clean_data[feeder_id]['name'] and item[1]
+                       == time]
+    print(f"DEBUG 12 | {matching_result=}")
+    if not matching_result:
         print(
             f"❌ No schedule found at {time} for Feeder #{feeder_number}. Cannot remove.")
         return
 
-    # Translate feeder_number to feeder_id
-    feeder_id = clean_data[str(feeder_number)]["feeder_id"]
-
     # TODO: handle duplicate schedules at same time?
 
     """
-    Calls the remove_schedule.sh script to delete a specific cron job.
+    Calls the remove_scheduled_feed.sh script to delete a specific cron job.
     Returns True if successful, False if the job wasn't found or an error occurred.
     """
+    print(f"DEBUG 20 | {feeder_number=} {time=}")
     try:
         # We use check=True so that if the bash script exits with 1,
         # it raises a CalledProcessError automatically.
         result = subprocess.run(
-            ["./remove_schedule.sh", str(feeder_number), str(time)],
+            ["./remove_scheduled_feed.sh", str(feeder_number), str(time)],
             check=True,
             capture_output=True,
             text=True
@@ -424,8 +406,59 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
         return False
 
     except FileNotFoundError:
-        print("Error: remove_schedule.sh not found. Check the file path.")
+        print("Error: remove_scheduled_feed.sh not found. Check the file path.")
         return False
+
+
+# TODO: Create scheduled removal (cron job to trigger remove_scheduled_feed.sh in the future)
+
+# --- MAIN INPUT FUNCTION ---
+def task_input() -> None:
+    action = input(
+        "Select action: Add (A), Remove (R), View (V), Exit (X): ").strip().lower()
+
+    # INPUT: ADD ACTION
+    if action in ['add', 'a']:
+        time = get_time()
+        feeder_number = get_feeder_number_flex()
+        amount = get_amount()
+        if feeder_number == 3:
+            add_schedule(time, amount, 1)
+            add_schedule(time, amount, 2)
+        else:
+            add_schedule(time, amount, feeder_number)
+
+    # INPUT: REMOVE ACTION
+    elif action in ['remove', 'r', 'rm', 'd', 'del', 'delete']:
+        # Print current schedules, for user reference
+        print("Current schedules:")
+        clean_data: dict = fetch_feeder_info()
+        all_schedules: list[tuple] = view_schedule(clean_data)
+
+        # Prompt for machine & time to remove
+        feeder_number = get_feeder_number_flex()
+        time = get_time()
+
+        # Call remove function. Validation is handled inside function.
+        if feeder_number == 3:
+            remove_schedule(time, 1, clean_data, all_schedules)
+            remove_schedule(time, 2, clean_data, all_schedules)
+        else:
+            remove_schedule(time, feeder_number, clean_data, all_schedules)
+
+    # INPUT: VIEW ACTION
+    elif action in ['view', 'v', 'list', 'show']:
+        view_schedule(fetch_feeder_info())
+
+    # INPUT: EXIT ACTION
+    elif action in ['exit', 'x', 'quit', 'q']:
+        print("Exiting program.")
+        exit()
+
+    # OTHER: reject invalid action
+    else:
+        print("Invalid action. Please enter A, R, V, or X.")
+        return task_input()  # Retry
 
 
 # --- MAIN FUNCTION ---
