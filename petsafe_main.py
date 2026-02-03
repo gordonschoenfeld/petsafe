@@ -251,7 +251,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         for feeder in clean_data.values():
             for schedule in feeder['schedules']:
                 system_schedules.append(
-                    (feeder['name'], schedule['time'], schedule['amount'], "App"))
+                    (feeder['name'], schedule['time'], schedule['amount'], "Set in app"))
         return system_schedules
 
     # --- PRINT ALL SCHEDULES ---
@@ -267,18 +267,18 @@ def view_schedule(clean_data: dict) -> list[tuple]:
                          5: "5/8 cup", 6: "3/4 cup", 7: "7/8 cup", 8: "1 cup"}
         for i in range(len(all_schedules)):
             feeder_name, time, amount, source = all_schedules[i]
-            if amount.isdigit():
-                amount_units = int(amount)
-                amount_str = cups_per_unit.get(amount_units)
+            if str(amount).isdigit():
+                amount_str = cups_per_unit.get(amount)
             else:
-                amount_str = "AUTO"
+                amount_str = "ERROR"
             all_schedules[i] = (feeder_name, time, amount_str, source)
 
         # --- PRINT TABLE ---
         # Define column widths
-        w_name, w_time, w_amount, w_type = 20, 7, 8, 10
+        w_name, w_time, w_amount, w_type = 20, 7, 8, 11
 
         # Print Header
+        print("")
         print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Amount':<{w_amount}} | {'Note':<{w_type}}")
         print("-" * (w_name + w_time + w_amount + w_type + 9))
 
@@ -348,20 +348,19 @@ def task_input() -> None:
 
 # -- ADD SCHEDULE FUNCTION --
 def add_schedule(time: str, amount: int | str, feeder_number: int) -> None:
-    schedule_time = time
-    feeder_id = feeder_number
-    amount = amount
+    amount = str(amount)
+    feeder_number = str(feeder_number)
     script_path = "./set_schedule.sh"
 
     # 1. Translate 'auto' amount
     if amount == "auto":
-        amount = feeders_list[str(feeder_id)]["default_amount"]
+        amount = feeders_list[feeder_number]["default_amount"]
 
     try:
         # 2. Call the script with the arguments
         # The arguments are passed as a list: [Script, Arg1, Arg2, Arg3]
         result = subprocess.run(
-            [script_path, schedule_time, str(feeder_id), str(amount)],
+            [script_path, time, feeder_number, amount],
             capture_output=True,  # Captures stdout and stderr
             text=True,            # Returns output as string instead of bytes
             check=True            # Raises CalledProcessError if script fails
@@ -397,7 +396,7 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
         return
 
     # Translate feeder_number to feeder_id
-    feeder_id = clean_data[feeder_number]["feeder_id"]
+    feeder_id = clean_data[str(feeder_number)]["feeder_id"]
 
     # TODO: handle duplicate schedules at same time?
 
