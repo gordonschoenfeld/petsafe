@@ -61,22 +61,27 @@ if __name__ == "__main__":
 
     try:
         # 2. Parse arguments
-        feeder_id = feeders_list[sys.argv[1]]["id"]
-        feed_amount = int(sys.argv[2])
+        feeder_number = int(sys.argv[1])
+        feeder_name = feeders_list[feeder_number]["name"]
+        feeder_id = feeders_list[feeder_number]["id"]
+        feed_units = int(sys.argv[2])
+        cups_per_unit = {1: "1/8 cup", 2: "1/4 cup", 3: "3/8 cup", 4: "1/2 cup",
+                         5: "5/8 cup", 6: "3/4 cup", 7: "7/8 cup", 8: "1 cup"}
+        feed_amount = cups_per_unit.get(feed_units)
 
         # 3. Validate that the feeder index actually exists
         if feeder_id not in [feeder.id for feeder in feeders]:
             print(
-                f"Error: Feeder ID {feeder_id} is not recognized.")
+                f"Error: Feeder {feeder_number} (ID {feeder_id}) is not recognized.")
             sys.exit(1)
 
         # 4. Execute the logic
-        print(f"Triggering Feeder #{feeder_id} for amount: {feed_amount}")
-        feeder_id.feed(amount=feed_amount, slow_feed=False)
+        print(f"Triggering {feeder_name} Feeder for amount: {feed_amount}...")
+        feeder_id.feed(amount=feed_units, slow_feed=False)
 
     except ValueError:
         print("Error: Feeder number and Amount must be integers.")
         sys.exit(1)
 
-# input format:   python3 feed_now.py <feeder_index> <amount>
-# input example:  python3 feed_now.py 2 4
+# input format:   python3 feed_now.py <feeder_id> <amount>
+# input example:  python3 feed_now.py ***REDACTED*** 2

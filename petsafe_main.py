@@ -67,9 +67,10 @@ except FileNotFoundError:
     print("Error: 'petsafe_tokens.json' not found. Please run auth_setup.py first, and ensure it is in the correct directory.")
     exit()
 
-# Print time
+# Print timestamp
 print("RUN TIME:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 print("=============================")
+print("")
 
 # Initialize client
 client = sf.PetSafeClient(
@@ -78,12 +79,12 @@ client = sf.PetSafeClient(
     refresh_token=saved_tokens["refresh_token"],
     access_token=saved_tokens["access_token"]
 )
-with open("feeders_list.json", "r") as f:
+# This is needed to know the default amounts per feeder.
+with open("feeders_general_info.json", "r") as f:
     feeders_list = json.load(f)
 
+
 # GET FEEDER INFO & CLEAN UP DATA
-
-
 def fetch_feeder_info() -> dict:
     clean_data: dict = {}
 
@@ -171,10 +172,131 @@ def get_amount() -> int | str:
         return int(amount)
 
 
+# -- VIEW SCHEDULE FUNCTION --
+def view_schedule(clean_data) -> None:
+
+    # --- FETCH CRON SCHEDULES ---
+    def get_cron_lines() -> list:
+        """Fetches the raw crontab output."""
+        try:
+            # Run 'crontab -l' and capture output
+            result = subprocess.run(
+                ['crontab', '-l'],
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode != 0:
+                # If no crontab exists, return empty list
+                return []
+
+            # Split into lines and remove empty ones
+            return [line for line in result.stdout.splitlines() if line.strip()]
+
+        except FileNotFoundError:
+            print("Error: 'crontab' command not found.")
+            sys.exit(1)
+
+    def parse_cron_line(line) -> tuple | None:
+        """
+        Parses a single cron line to extract time, feeder, and amount.
+        Assumes format: MIN HOUR * * * python_path script_path FEEDER_ID AMOUNT
+        """
+        parts = line.split()
+
+        # Basic check: Cron lines usually have at least 5 time fields + command
+        if len(parts) < 6:
+            return None
+
+        # Check if this line is running our target script
+        if target_script not in line:
+            return None
+
+        # Extract Time
+        minute = parts[0].zfill(2)  # 0 -> 00
+        hour = parts[1].zfill(2)   # 8 -> 08
+        time_str = f"{hour}:{minute}"
+
+        # Extract Arguments
+        # Based on set_schedule.sh, arguments are the LAST two items: [ID, AMOUNT]
+        try:
+            amount = parts[-1]
+            feeder_id = parts[-2]
+        except IndexError:
+            return None
+
+        # Lookup friendly name, default to "Feeder #ID" if not in dict
+        with open("feeders_general_info.json", "r") as f:
+            feeders_list = json.load(f)
+        feeder_name = feeders_list.get(feeder_id, {}).get(
+            "name", f"Feeder #{feeder_id}")
+
+        return feeder_name, time_str, amount, ""
+
+    def get_cron_schedules() -> list[tuple]:
+        cron_schedules = []
+        cron_lines = get_cron_lines()
+        for line in cron_lines:
+            parsed = parse_cron_line(line)
+            if parsed:
+                cron_schedules.append(parsed)
+        return cron_schedules
+
+    # --- FETCH SYSTEM SCHEDULES ---
+    def get_system_schedules() -> list[tuple]:
+        system_schedules = []
+        for feeder in clean_data.values():
+            for schedule in feeder['schedules']:
+                system_schedules.append(
+                    (feeder['name'], schedule['time'], schedule['amount'], "App"))
+        return system_schedules
+
+    # --- PRINT ALL SCHEDULES ---
+    def print_all_schedules():
+        # Get lists from both sources and combine both lists
+        # Output format: (feeder_name, time, amount, source)
+        cron_schedules = get_cron_schedules()
+        system_schedules = get_system_schedules()
+        all_schedules = cron_schedules + system_schedules
+
+        # Convert amount from units to cups for display
+        cups_per_unit = {1: "1/8 cup", 2: "1/4 cup", 3: "3/8 cup", 4: "1/2 cup",
+                         5: "5/8 cup", 6: "3/4 cup", 7: "7/8 cup", 8: "1 cup"}
+        for i in range(len(all_schedules)):
+            feeder_name, time, amount, source = all_schedules[i]
+            if amount.isdigit():
+                amount_units = int(amount)
+                amount_str = cups_per_unit.get(amount_units)
+            else:
+                amount_str = "AUTO"
+            all_schedules[i] = (feeder_name, time, amount_str, source)
+
+        # --- PRINT TABLE ---
+        # Define column widths
+        w_name, w_time, w_amount, w_type = 20, 7, 8, 10
+
+        # Print Header
+        print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Amount':<{w_amount}} | {'Note':<{w_type}}")
+        print("-" * (w_name + w_time + w_amount + w_type + 9))
+
+        if not all_schedules:
+            print("No feeder schedules found.")
+        else:
+            # Sort by Time (HH:MM)
+            rows = sorted(all_schedules, key=lambda x: (x[0], x[1]))
+            for row in rows:
+                print(
+                    f"{row[0]:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
+
+    # --- MAIN VIEW SCHEDULE LOGIC ---
+    print_all_schedules()
+
+
 # --- MAIN INPUT FUNCTION ---
 def task_input() -> None:
     action = input(
         "Select action: Add (A), Remove (R), View (V), Exit (X): ").strip().lower()
+
     # INPUT: ADD ACTION
     if action in ['add', 'a']:
         time = get_time()
@@ -188,17 +310,21 @@ def task_input() -> None:
 
     # INPUT: REMOVE ACTION
     elif action in ['remove', 'r', 'rm', 'd', 'del', 'delete']:
-        feeder_number = get_feeder_number_single()
-
-        # print current schedules
+        # Print current schedules, for user reference
         print("Current schedules:")
         clean_data = fetch_feeder_info()
-        for schedule in clean_data[feeders_list[feeder_number]]["schedules"]:
-            print(f"  {schedule['time']} - {schedule['amount']}")
+        view_schedule(clean_data)
 
-        # get time to remove
+        # Prompt for machine & time to remove
+        feeder_number = get_feeder_number_flex()
         time = get_time()
-        remove_schedule(action, time, feeder_number)
+
+        # Call remove function. Validation is handled inside function.
+        if feeder_number == 3:
+            remove_schedule(time, 1)
+            remove_schedule(time, 2)
+        else:
+            remove_schedule(time, feeder_number)
 
     # INPUT: VIEW ACTION
     elif action in ['view', 'v', 'list', 'show']:
@@ -215,20 +341,6 @@ def task_input() -> None:
         return task_input()  # Retry
 
 
-# -- VIEW SCHEDULE FUNCTION --
-def view_schedule(clean_data) -> None:
-    # TODO: make formatting match style of print_cron_schedule()
-    # TODO: include Crons, merge into this
-    cups_per_unit = {1: "1/8 cup", 2: "1/4 cup", 3: "3/8 cup", 4: "1/2 cup",
-                     5: "5/8 cup", 6: "3/4 cup", 7: "7/8 cup", 8: "1 cup"}
-    for feeder_id, feeder_info in clean_data.items():
-        print(
-            f"\nFeeder: {feeder_info['feeder_number']} {feeder_info['name']} (ID: {feeder_id})")
-        for schedule in feeder_info['schedules']:
-            print(
-                f" - Time: {schedule['time']} | Amount: {schedule['amount']} unit(s) [{cups_per_unit.get(int(schedule['amount']), 'Unknown amount')}]")
-
-
 # -- ADD SCHEDULE FUNCTIONS --
 def add_schedule(time, amount, feeder_number) -> None:
     schedule_time = time
@@ -236,7 +348,7 @@ def add_schedule(time, amount, feeder_number) -> None:
     amount = amount
     script_path = "./set_schedule.sh"
 
-    # 1. Handle 'auto' amount
+    # 1. Translate 'auto' amount
     if amount == "auto":
         amount = feeders_list[str(feeder_id)]["default_amount"]
 
@@ -264,107 +376,15 @@ def add_schedule(time, amount, feeder_number) -> None:
         print(f"Error: could not find the script at: {script_path}")
 
 
-# -- REMOVE SCHEDULE FUNCTIONS --
-# The name of the script we are looking for in the cron list
-target_script = "feed_now.py"
-# ---------------------
-
-
-def get_cron_schedule():
-    """Fetches the raw crontab output."""
-    try:
-        # Run 'crontab -l' and capture output
-        result = subprocess.run(
-            ['crontab', '-l'],
-            capture_output=True,
-            text=True
-        )
-
-        if result.returncode != 0:
-            # If no crontab exists, return empty list
-            return []
-
-        # Split into lines and remove empty ones
-        return [line for line in result.stdout.splitlines() if line.strip()]
-
-    except FileNotFoundError:
-        print("Error: 'crontab' command not found.")
-        sys.exit(1)
-
-
-def parse_cron_line(line):
-    """
-    Parses a single cron line to extract time, feeder, and amount.
-    Assumes format: MIN HOUR * * * python_path script_path FEEDER_ID AMOUNT
-    """
-    parts = line.split()
-
-    # Basic check: Cron lines usually have at least 5 time fields + command
-    if len(parts) < 6:
-        return None
-
-    # Check if this line is running our target script
-    if target_script not in line:
-        return None
-
-    # Extract Time
-    minute = parts[0].zfill(2)  # 0 -> 00
-    hour = parts[1].zfill(2)   # 8 -> 08
-    time_str = f"{hour}:{minute}"
-
-    # Extract Arguments
-    # Based on set_schedule.sh, arguments are the LAST two items: [ID, AMOUNT]
-    try:
-        amount = parts[-1]
-        feeder_id = parts[-2]
-    except IndexError:
-        return None
-
-    # Lookup friendly name, default to "Feeder #ID" if not in dict
-    with open("feeders_list.json", "r") as f:
-        feeders_list = json.load(f)
-    feeder_name = feeders_list.get(feeder_id, {}).get(
-        "name", f"Feeder #{feeder_id}")
-
-    note = f"Amount: {amount}"
-
-    return (feeder_name, time_str, note)
-
-
-def print_cron_schedule():
-    lines = get_cron_schedule()
-    rows = []
-
-    for line in lines:
-        parsed = parse_cron_line(line)
-        if parsed:
-            rows.append(parsed)
-
-    # --- PRINT TABLE ---
-    # Define column widths
-    w_name, w_time, w_note = 20, 7, 10
-
-    # Print Header
-    print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Type':<{w_note}}")
-    print("-" * (w_name + w_time + w_note + 6))
-
-    if not rows:
-        print("No feeder schedules found.")
-    else:
-        # Sort by Time (HH:MM)
-        rows.sort(key=lambda x: x[1])
-
-        for row in rows:
-            print(
-                f"{row[0]:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_note}}")
-
-
-# TODO: ask user which item # to delete
-# TODO: reject if it's a client side schedule
-
-
+# -- REMOVE SCHEDULE FUNCTION --
 def remove_schedule(time, feeder_number) -> None:
-    # TODO: make call(s) to delete_schedule.sh. if feeder_number == 3, call twice
+    # The name of the script we are looking for in the cron list
+    target_script = "feed_now.py"
+
+    # TODO: special check and reject if it's an app side schedule (not cron)
+    # TODO: validate time exists in cron for that feeder
+    # TODO: translate feeder_number to feeder_id
+
     script_path = "./delete_schedule.sh"
 
     print(
