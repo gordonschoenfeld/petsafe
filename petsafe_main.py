@@ -84,7 +84,7 @@ with open("feeders_general_info.json", "r") as f:
     feeders_list = json.load(f)
 
 
-# GET FEEDER INFO & CLEAN UP DATA
+# GET FEEDER INFO & GENERATE `clean_data` DICT
 def fetch_feeder_info() -> dict:
     clean_data: dict = {}
 
@@ -173,7 +173,7 @@ def get_amount() -> int | str:
 
 
 # -- VIEW SCHEDULE FUNCTION --
-def view_schedule(clean_data) -> None:
+def view_schedule(clean_data: dict) -> list[tuple]:
 
     # --- FETCH CRON SCHEDULES ---
     def get_cron_lines() -> list:
@@ -202,6 +202,9 @@ def view_schedule(clean_data) -> None:
         Parses a single cron line to extract time, feeder, and amount.
         Assumes format: MIN HOUR * * * python_path script_path FEEDER_ID AMOUNT
         """
+        # The name of the script we are looking for in the cron list
+        target_script = "feed_now.py"
+
         parts = line.split()
 
         # Basic check: Cron lines usually have at least 5 time fields + command
@@ -252,12 +255,12 @@ def view_schedule(clean_data) -> None:
         return system_schedules
 
     # --- PRINT ALL SCHEDULES ---
-    def print_all_schedules():
+    def print_all_schedules() -> list[tuple]:
         # Get lists from both sources and combine both lists
         # Output format: (feeder_name, time, amount, source)
-        cron_schedules = get_cron_schedules()
-        system_schedules = get_system_schedules()
-        all_schedules = cron_schedules + system_schedules
+        cron_schedules: list[tuple] = get_cron_schedules()
+        system_schedules: list[tuple] = get_system_schedules()
+        all_schedules: list[tuple] = cron_schedules + system_schedules
 
         # Convert amount from units to cups for display
         cups_per_unit = {1: "1/8 cup", 2: "1/4 cup", 3: "3/8 cup", 4: "1/2 cup",
@@ -287,6 +290,8 @@ def view_schedule(clean_data) -> None:
             for row in rows:
                 print(
                     f"{row[0]:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
+
+        return all_schedules
 
     # --- MAIN VIEW SCHEDULE LOGIC ---
     print_all_schedules()
@@ -321,10 +326,10 @@ def task_input() -> None:
 
         # Call remove function. Validation is handled inside function.
         if feeder_number == 3:
-            remove_schedule(time, 1)
-            remove_schedule(time, 2)
+            remove_schedule(time, 1, clean_data)
+            remove_schedule(time, 2, clean_data)
         else:
-            remove_schedule(time, feeder_number)
+            remove_schedule(time, feeder_number, clean_data)
 
     # INPUT: VIEW ACTION
     elif action in ['view', 'v', 'list', 'show']:
@@ -341,8 +346,8 @@ def task_input() -> None:
         return task_input()  # Retry
 
 
-# -- ADD SCHEDULE FUNCTIONS --
-def add_schedule(time, amount, feeder_number) -> None:
+# -- ADD SCHEDULE FUNCTION --
+def add_schedule(time: str, amount: int | str, feeder_number: int) -> None:
     schedule_time = time
     feeder_id = feeder_number
     amount = amount
@@ -377,18 +382,51 @@ def add_schedule(time, amount, feeder_number) -> None:
 
 
 # -- REMOVE SCHEDULE FUNCTION --
-def remove_schedule(time, feeder_number) -> None:
-    # The name of the script we are looking for in the cron list
-    target_script = "feed_now.py"
+def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> None:
+    # Validation
+    schedule_key = (time, feeder_number)
+    if schedule_key in all_schedules and all_schedules[schedule_key]["source"] == "App":
+        print(
+            f"❌ Cannot remove schedule at {time} for Feeder #{feeder_number}.")
+        print(f"Please remove it via the PetSafe SmartFeed app.")
+        return
 
-    # TODO: special check and reject if it's an app side schedule (not cron)
-    # TODO: validate time exists in cron for that feeder
-    # TODO: translate feeder_number to feeder_id
+    if (time, feeder_number) not in all_schedules:
+        print(
+            f"❌ No schedule found at {time} for Feeder #{feeder_number}. Cannot remove.")
+        return
 
-    script_path = "./delete_schedule.sh"
+    # Translate feeder_number to feeder_id
+    feeder_id = clean_data[feeder_number]["feeder_id"]
 
-    print(
-        f"Removing schedule at {time} from Feeder #{feeder_number}... (Functionality not yet implemented)")
+    # TODO: handle duplicate schedules at same time?
+
+    """
+    Calls the remove_schedule.sh script to delete a specific cron job.
+    Returns True if successful, False if the job wasn't found or an error occurred.
+    """
+    try:
+        # We use check=True so that if the bash script exits with 1,
+        # it raises a CalledProcessError automatically.
+        result = subprocess.run(
+            ["./remove_schedule.sh", str(feeder_number), str(time)],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+
+        print(f"Success: {result.stdout.strip()}")
+        return True
+
+    except subprocess.CalledProcessError as e:
+        # This block catches the 'exit 1' from your bash script
+        print(
+            f"Failed to remove schedule: {e.stderr.strip() or e.stdout.strip()}")
+        return False
+
+    except FileNotFoundError:
+        print("Error: remove_schedule.sh not found. Check the file path.")
+        return False
 
 
 # --- MAIN FUNCTION ---
