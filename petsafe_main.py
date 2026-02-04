@@ -143,6 +143,7 @@ def get_id_by_number(clean_data, target_number) -> int | None:
 def get_time() -> str:
     time = input(
         "Enter feed time (24-hour format HH:MM): ").strip().lower()
+    # escape hatch
     if time in ['exit', 'x', 'quit', 'q']:
         print("Exiting program.")
         exit()
@@ -159,6 +160,7 @@ def get_time() -> str:
 def get_feeder_number_flex() -> int | str:
     feeder_number = input(
         "Enter feeder number: [1. Under ***REMOVED***, 2. ***REMOVED***, A. all]: ").strip().lower()
+    # escape hatch
     if feeder_number in ['exit', 'x', 'quit', 'q']:
         print("Exiting program.")
         exit()
@@ -166,6 +168,7 @@ def get_feeder_number_flex() -> int | str:
     if feeder_number not in ['1', '2', 'a', 'all']:
         print("Invalid feeder number. Please enter 1, 2, or A.")
         return get_feeder_number_flex()  # Retry
+    # all option
     if feeder_number in ['all', 'a']:
         return "all"
     else:
@@ -175,6 +178,7 @@ def get_feeder_number_flex() -> int | str:
 def get_feeder_number_single() -> int:
     feeder_number = input(
         "Enter feeder number to add schedule to: [1 Under ***REMOVED***, 2 ***REMOVED***]: ").strip().lower()
+    # escape hatch
     if feeder_number in ['exit', 'x', 'quit', 'q']:
         print("Exiting program.")
         exit()
@@ -189,20 +193,22 @@ def get_feeder_number_single() -> int:
 def get_amount() -> int | str:
     amount = input(
         "Enter units to feed (1 unit = 1/8 cup), or AUTO: ").strip().lower()
-    # reject invalid amount
+    # escape hatch
     if amount in ['exit', 'x', 'quit', 'q']:
         print("Exiting program.")
         exit()
+    # reject invalid amount
     if (not amount.isdigit() or int(amount) < 1) and amount not in ['auto', 'a']:
         print("Invalid amount. Please enter a positive integer, or 'AUTO'.")
         return get_amount()  # Retry
+    # auto option
     if amount.lower() in ['auto', 'a']:
         return "auto"
     else:
         return int(amount)
 
 
-def get_date() -> tuple[str] | None:
+def get_date(clarifying_text: str = None) -> tuple[str] | None:
     def normalize_date(date_str: str) -> tuple[str]:
         # Regex Breakdown:
         # 1. (0?[1-9]|1[0-2]) : Capture Group 1 (Month) - 1-12, optional leading zero
@@ -274,17 +280,20 @@ def get_date() -> tuple[str] | None:
 
         return candidate_date
 
-    date = input(
-        "Enter date (MM/DD): ").strip().lower()
+    if clarifying_text:
+        date = input(
+            f"Enter {clarifying_text} date (MM/DD): ").strip().lower()
+    else:
+        date = input(f"Enter date (MM/DD): ").strip().lower()
+
+    # escape hatch
     if date in ['exit', 'x', 'quit', 'q']:
         print("Exiting program.")
         exit()
+    # allow none
     if date.strip().lower() in ['none', 'no', 'n']:
         return None
-    # reject invalid date format
-    if not re.match(r'^(?:(?:0?[1-9]|1[0-2])\/(?:0?[1-9]|[12]\d|3[01])|(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01]))$', date):
-        print("Invalid date format. Please use MM/DD.")
-        return get_date()  # Retry
+    # TODO: figure out why 2-digit strict breaks (is it here, or in diff subfunction?)
     # return valid date
     else:
         date_str = normalize_date(date)
@@ -587,7 +596,7 @@ def task_input() -> None:
         time = get_time()
         feeder_number = get_feeder_number_flex()
         amount = get_amount()
-        kill_date = get_date()
+        kill_date = get_date("expiration")
 
         if feeder_number == "all":
             add_schedule(time, amount, 1)
