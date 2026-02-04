@@ -309,7 +309,7 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
     return clean_date
 
 
-# -- VIEW SCHEDULE FUNCTION --
+# -- 👀 VIEW SCHEDULE FUNCTION --
 def view_schedule(clean_data: dict) -> list[tuple]:
 
     # --- FETCH CRON SCHEDULES ---
@@ -453,7 +453,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
     return all_schedules
 
 
-# -- ADD SCHEDULE FUNCTION --
+# -- ➕ ADD SCHEDULE FUNCTION --
 def add_schedule(time: str, amount: int | str, feeder_number: int | str) -> None:
     amount: str = str(amount)
     feeder_number: str = str(feeder_number)
@@ -487,7 +487,65 @@ def add_schedule(time: str, amount: int | str, feeder_number: int | str) -> None
         print(f"Error: could not find the script at: {script_path}")
 
 
-# -- REMOVE SCHEDULE FUNCTION --
+# -- ☠️ SET EXPIRY FUNCTION --
+def set_expiry(kill_date: tuple[str], time: str, amount: int | str, feeder_number: int) -> bool:
+    """
+    Calls set_expiry.sh to schedule a self-destructing cron job.
+
+    Args:
+        month (str): Month as "MM" or "M" (e.g., "02" or "2").
+        day (str): Day as "DD" or "D" (e.g., "15" or "5").
+        feeder_number (int): 1 or 2.
+        amount (int | str): The amount to stop feeding (e.g., 5 or "auto").
+    """
+    script_path = "./set_expiry.sh"
+
+    kill_month, kill_day = kill_date
+    target_hour: str = time[:2]
+    target_min: str = time[-2:]
+
+    # 1. Basic Validation (Optional, but saves a shell call)
+    if not (kill_month.isdigit() and kill_day.isdigit()):
+        print("❌ Error: Month and Day must be numbers.")
+        return False
+
+    if not (1 <= int(kill_month) <= 12) or not (1 <= int(kill_day) <= 31):
+        print(f"❌ Error: Invalid date {kill_month}/{kill_day}.")
+        return False
+
+    # 2. Handle 'auto' amount if passed
+    # TODO: change to real interpretation
+    if str(amount).lower() in ["auto", "a"]:
+        print("❌ Error: Expiry requires a specific amount (e.g., 1, 2, 5). 'Auto' is ambiguous.")
+        return False
+
+    try:
+        # 3. Call the Shell Script
+        # Arguments: ./set_expiry.sh <kill_month> <kill_day> <target_hour> <target_min> <feeder_num> <amount>
+        result = subprocess.run(
+            [script_path, str(kill_month), str(kill_day), str(target_hour), str(target_min), str(
+                feeder_number), str(amount)],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        # 4. Success Feedback
+        print(f"Success: {result.stdout.strip()}")
+        return True
+
+    except subprocess.CalledProcessError as e:
+        # 5. Error Feedback
+        print(f"Failed to set expiry: {e.stderr.strip() or e.stdout.strip()}")
+        return False
+
+    except FileNotFoundError:
+        print(
+            f"Error: '{script_path}' not found. Make sure it exists and is executable.")
+        return False
+
+
+# -- 🗑️ REMOVE SCHEDULE FUNCTION --
 def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> None:
     # NOTE Schedule format: (feeder_name: str, time: str, amount: str, source: str)
 
@@ -539,62 +597,7 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
         return False
 
 
-def set_expiry(kill_date: tuple[str], amount: int | str, feeder_number: int) -> bool:
-    """
-    Calls set_expiry.sh to schedule a self-destructing cron job.
-
-    Args:
-        month (str): Month as "MM" or "M" (e.g., "02" or "2").
-        day (str): Day as "DD" or "D" (e.g., "15" or "5").
-        feeder_number (int): 1 or 2.
-        amount (int | str): The amount to stop feeding (e.g., 5 or "auto").
-    """
-    script_path = "./set_expiry.sh"
-
-    kill_month, kill_day = kill_date
-
-    # 1. Basic Validation (Optional, but saves a shell call)
-    if not (kill_month.isdigit() and kill_day.isdigit()):
-        print("❌ Error: Month and Day must be numbers.")
-        return False
-
-    if not (1 <= int(kill_month) <= 12) or not (1 <= int(kill_day) <= 31):
-        print(f"❌ Error: Invalid date {kill_month}/{kill_day}.")
-        return False
-
-    # 2. Handle 'auto' amount if passed
-    # TODO: change to real interpretation
-    if str(amount).lower() in ["auto", "a"]:
-        print("❌ Error: Expiry requires a specific amount (e.g., 1, 2, 5). 'Auto' is ambiguous.")
-        return False
-
-    try:
-        # 3. Call the Shell Script
-        # Arguments: ./set_expiry.sh <MONTH> <DAY> <FEEDER_ID> <AMOUNT>
-        result = subprocess.run(
-            [script_path, str(kill_month), str(kill_day), str(
-                feeder_number), str(amount)],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        # 4. Success Feedback
-        print(f"Success: {result.stdout.strip()}")
-        return True
-
-    except subprocess.CalledProcessError as e:
-        # 5. Error Feedback
-        print(f"Failed to set expiry: {e.stderr.strip() or e.stdout.strip()}")
-        return False
-
-    except FileNotFoundError:
-        print(
-            f"Error: '{script_path}' not found. Make sure it exists and is executable.")
-        return False
-
-
-# --- MAIN INPUT TREE FUNCTION ---
+# --- 🌳 MAIN INPUT TREE FUNCTION ---
 def task_input() -> None:
     action = input(
         "Select action: Add (A), Remove (R), View (V), Exit (X): ").strip().lower()
@@ -615,10 +618,10 @@ def task_input() -> None:
         # if kill date supplied, trigger set_expiry
         if kill_date:
             if feeder_number == "all":
-                set_expiry(kill_date, amount, 1)
-                set_expiry(kill_date, amount, 2)
+                set_expiry(kill_date, time, amount, 1)
+                set_expiry(kill_date, time, amount, 2)
             else:
-                set_expiry(kill_date, amount, feeder_number)
+                set_expiry(kill_date, time, amount, feeder_number)
 
     # INPUT: REMOVE ACTION
     elif action in ['remove', 'r', 'rm', 'd', 'del', 'delete']:
@@ -653,7 +656,7 @@ def task_input() -> None:
         return task_input()  # Retry
 
 
-# --- MAIN FUNCTION ---
+# --- 🏡 MAIN FUNCTION ---
 def main():
     # 1. Print timestamp immediately
     print("================================")
@@ -669,6 +672,6 @@ def main():
     task_input()
 
 
-# --- RUN MAIN FUNCTION ---
+# --- 🏠 RUN MAIN FUNCTION ---
 if __name__ == "__main__":
     main()
