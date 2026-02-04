@@ -281,24 +281,32 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
         return candidate_date
 
     if clarifying_text:
-        date = input(
+        raw_date_input = input(
             f"Enter {clarifying_text} date (MM/DD): ").strip().lower()
     else:
-        date = input(f"Enter date (MM/DD): ").strip().lower()
+        raw_date_input = input(f"Enter date (MM/DD): ").strip().lower()
 
     # escape hatch
-    if date in ['exit', 'x', 'quit', 'q']:
+    if raw_date_input in ['exit', 'x', 'quit', 'q']:
         print("Exiting program.")
         exit()
     # allow none
-    if date.strip().lower() in ['none', 'no', 'n']:
+    if raw_date_input.strip().lower() in ['none', 'no', 'n']:
         return None
-    # TODO: figure out why 2-digit strict breaks (is it here, or in diff subfunction?)
+
+    # 1. VALIDATE the raw string (e.g., "8/9")
+    # Do NOT pass a tuple here.
+    if not validate_date(raw_date_input):
+        print("Invalid format.")
+        return None
+
+    # 2. NORMALIZE after validation is successful
+    # This turns "8/9" into ('08', '09') or a datetime object
+    clean_date = normalize_date(raw_date_input)
+
     # return valid date
-    else:
-        date_str = normalize_date(date)
-        date_str_valid = validate_date(date_str)
-        return date_str_valid
+    print(f"DEBUG | {clean_date=}")
+    return clean_date
 
 
 # -- VIEW SCHEDULE FUNCTION --
@@ -662,6 +670,5 @@ def main():
 
 
 # --- RUN MAIN FUNCTION ---
-# TODO: change if it needs to consume command-line arguments?
 if __name__ == "__main__":
     main()
