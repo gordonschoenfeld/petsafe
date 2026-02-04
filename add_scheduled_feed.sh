@@ -55,6 +55,6 @@ else
     echo "Success! Cron job created:"
     echo "   Time:   $HOUR:$MINUTE daily"
     echo "   Feeder: $FEEDER_NUM"
-    echo "   Amount: $AMOUNT units"
+    echo "   Amount: $AMOUNT unit(s)"
     echo "   Log:    $LOG_FILE"
 fi
