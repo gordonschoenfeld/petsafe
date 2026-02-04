@@ -1,61 +1,68 @@
 #!/bin/bash
 
 # --- ARGUMENT PARSING ---
-if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <kill_month> <kill_day> <feeder_num> <amount>"
-    echo "Example: $0 05 01 2 4 (Deletes all jobs for Feeder 2, Amount 4 on May 1st)"
+if [ "$#" -ne 6 ]; then
+    echo "Usage: $0 <kill_month> <kill_day> <target_hour> <target_min> <feeder_num> <amount>"
+    echo "Example: $0 05 01 08 30 2 4"
+    echo "  (On May 1st, delete the job scheduled for 08:30, Feeder 2, Amount 4)"
     exit 1
 fi
 
 KILL_MONTH=$1
 KILL_DAY=$2
-FEEDER_NUM=$3
-AMOUNT=$4
+TARGET_HOUR=$3
+TARGET_MIN=$4
+FEEDER_NUM=$5
+AMOUNT=$6
 
-# --- CHECK FOR 'at' COMMAND ---
-if ! command -v at &> /dev/null; then
-    echo "Error: 'at' command not found."
+# --- CHECK FOR COMMANDS ---
+if ! command -v crontab &> /dev/null; then
+    echo "Error: 'crontab' command not found."
     exit 1
 fi
 
 # --- CONSTRUCT PATTERNS ---
+
 # 1. The Feeding Pattern to kill (Regex)
-# Matches: feed_now.py [space] ID [space] AMOUNT [space or end of line]
-FEED_PATTERN="feed_now.py $FEEDER_NUM $AMOUNT"
+# Logic: Anchored to start of line (^)
+# Matches: Minute -> Space -> Hour -> Space -> (Wildcards) -> feed_now.py -> ID -> Amount
+# Note: [ \t]+ matches both tabs and spaces.
+FEED_PATTERN="^$TARGET_MIN[ \t]+$TARGET_HOUR[ \t]+.*feed_now.py $FEEDER_NUM $AMOUNT"
 
-
-# 2. The Expiry Tag (To identify THIS cleanup job so it can delete itself)
-EXPIRY_TAG="# EXPIRY_AUTO_REMOVE_F${FEEDER_NUM}_A${AMOUNT}"
+# 2. The Expiry Tag
+# Updated to include TIME in the tag name. 
+# This prevents conflicts if you schedule different expiries for 8:00 vs 18:00 on the same day.
+EXPIRY_TAG="# EXPIRY_AUTO_REMOVE_F${FEEDER_NUM}_A${AMOUNT}_T${TARGET_HOUR}${TARGET_MIN}"
 
 # --- CHECK FOR EXISTING EXPIRY ---
 if crontab -l 2>/dev/null | grep -Fq "$EXPIRY_TAG"; then
-    echo "⚠️  An expiry job for Feeder $FEEDER_NUM (Amount $AMOUNT) is already scheduled."
-    echo "Please remove it manually if you want to change the date."
+    echo "⚠️  An expiry job for this specific time/feeder/amount is already scheduled."
+    echo "   Tag: $EXPIRY_TAG"
     exit 1
 fi
 
 # --- CONSTRUCT THE 'KILLER' COMMAND ---
-# This complex one-liner runs at 23:59.
-# Logic: 
 # 1. Read crontab
-# 2. Grep -v (Remove) the feeding schedule
-# 3. Grep -v (Remove) the expiry tag (itself)
+# 2. Grep -v -E (Remove Extended Regex) -> Removes the specific feeding time
+# 3. Grep -v -F (Remove Fixed String)   -> Removes this specific expiry job
 # 4. Write back to crontab
 KILLER_CMD="crontab -l | grep -E -v '$FEED_PATTERN' | grep -F -v '$EXPIRY_TAG' | crontab -"
 
 # --- SCHEDULE THE JOB ---
 # Cron format: 59 23 Day Month * Command
-CRON_SCHEDULE="59 23 $D $M *"
+CRON_SCHEDULE="59 23 $KILL_DAY $KILL_MONTH *"
 
 # Combine into the final line
 NEW_JOB="$CRON_SCHEDULE $KILLER_CMD $EXPIRY_TAG"
 
 # Write to Crontab
-(crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -
-
-echo "✅ Success! Scheduled expiration ☠️."
-echo "   Date:   $KILL_MONTH/$KILL_DAY at 23:59"
-echo "   Feeder: $FEEDER_NUM"
-echo "   Amount: $AMOUNT unit(s)"
-
-echo "   Action: All matching feeding jobs will be removed."
+if (crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -; then
+    echo "✅ Success! Scheduled expiration ☠️."
+    echo "   Kill Date: $KILL_MONTH/$KILL_DAY at 23:59"
+    echo "   Time:      $TARGET_HOUR:$TARGET_MIN"
+    echo "   Feeder:    $FEEDER_NUM"
+    echo "   Amount:    $AMOUNT unit(s)"
+else
+    echo "❌ Error: Failed to update crontab."
+    exit 1
+fi
