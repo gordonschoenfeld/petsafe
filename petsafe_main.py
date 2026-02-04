@@ -54,7 +54,6 @@ def patched_refresh_tokens(self):
         raise Exception("Failed to refresh tokens. See AWS error above.")
 
 
-# Apply the patch
 sf.PetSafeClient.refresh_tokens = patched_refresh_tokens
 # --- END MONKEY PATCH ---
 
@@ -311,6 +310,7 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
 
 # -- 👀 VIEW SCHEDULE FUNCTION --
 def view_schedule(clean_data: dict) -> list[tuple]:
+    # TODO: display the exp date
 
     # --- FETCH CRON SCHEDULES ---
     def get_cron_lines() -> list:
@@ -334,7 +334,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             print("Error: 'crontab' command not found.")
             sys.exit(1)
 
-    def parse_cron_line(line) -> tuple | None:
+    def parse_cron_add_line(line) -> tuple | None:
         """
         Parses a single cron line to extract time, feeder, and amount.
         Assumes format: MIN HOUR * * * cd dir_path && python_path script_path FEEDER_ID AMOUNT >> logfile 2>&1
@@ -381,14 +381,41 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
         return feeder_name, time_str, amount, ""
 
+    def parse_cron_expiry_line(line) -> tuple | None:
+        log_line = line
+
+        # Define the pattern with named groups for easy extraction
+        pattern = re.compile(
+            r"^59 23 (?P<day>\d+) (?P<month>\d+) \* .*? # EXPIRY_AUTO_REMOVE_F(?P<feeder>\d+)_A(?P<amount>[^_]+)_T(?P<time>\d{4})$")
+
+        match = pattern.search(log_line)
+
+        if match:
+            data = match.groupdict()
+
+            with open("feeders_general_info.json", "r") as f:
+                feeders_list = json.load(f)
+
+            # Assemble output vars
+            feeder_num: str = str(data['feeder'])
+            feeder_name: str = feeders_list[feeder_num]['name']
+            date = f"{data['month']}/{data['day']}"
+            # Convert 1030 to 10:30
+            time_str = f"{data['time'][:2]}:{data['time'][2:]}"
+            amount = data['amount']
+
+            return date, feeder_name, time_str, amount
+
     def get_cron_schedules() -> list[tuple]:
         cron_schedules = []
         cron_lines = get_cron_lines()
         for line in cron_lines:
-            parsed = parse_cron_line(line)
+            parsed = parse_cron_add_line(line)
             if parsed:
                 cron_schedules.append(parsed)
         return cron_schedules
+
+        # TODO merge in lookups of parse_cron_expiry_line(line)
 
     # --- FETCH SYSTEM SCHEDULES ---
     def get_system_schedules() -> list[tuple]:
