@@ -67,11 +67,6 @@ except FileNotFoundError:
     print("Error: 'petsafe_tokens.json' not found. Please run auth_setup.py first, and ensure it is in the correct directory.")
     exit()
 
-# Print timestamp
-print("RUN TIME:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-print("=============================")
-print("")
-
 # Initialize client
 client = sf.PetSafeClient(
     email=saved_tokens["email"],
@@ -79,12 +74,13 @@ client = sf.PetSafeClient(
     refresh_token=saved_tokens["refresh_token"],
     access_token=saved_tokens["access_token"]
 )
-# This is needed to know the default amounts per feeder.
+
+# Fetch default amounts per feeder.
 with open("feeders_general_info.json", "r") as f:
     feeders_list = json.load(f)
 
 
-# GET FEEDER INFO & GENERATE `clean_data` DICT
+# --- FETCH FEEDER INFO & GENERATE `clean_data` DICT ---
 def fetch_feeder_info() -> dict:
     clean_data: dict = {}
 
@@ -123,9 +119,10 @@ def fetch_feeder_info() -> dict:
         # traceback.print_exc()
 
 
+# --- TRANSLATE FEEDER NUMBER INTO ID ---
 def get_id_by_number(clean_data, target_number) -> int | None:
     # Force target to a string to match the data format ('1' vs 1)
-    target_number = str(target_number)
+    target_number: str | int = str(target_number)
 
     for feeder_id, data in clean_data.items():
         if data['feeder_number'] == target_number:
@@ -136,7 +133,7 @@ def get_id_by_number(clean_data, target_number) -> int | None:
 # --- INPUT VALIDATION SUB-FUNCTIONS ---
 def get_time() -> str:
     time = input(
-        "Enter feed time (24-hour format HH:MM): ").strip()
+        "Enter feed time (24-hour format HH:MM): ").strip().lower()
     # reject invalid time format
     if not re.match(r'^([01]\d|2[0-3]):?([0-5]\d)$', time):
         print("Invalid time format. Please use HH:MM (00:00 to 23:59).")
@@ -149,12 +146,15 @@ def get_time() -> str:
 
 def get_feeder_number_flex() -> int | str:
     feeder_number = input(
-        "Enter feeder number: [1. Under ***REMOVED***, 2. ***REMOVED***, A. all]: ").strip()
+        "Enter feeder number: [1. Under ***REMOVED***, 2. ***REMOVED***, A. all]: ").strip().lower()
+    if feeder_number in ['exit', 'x', 'quit', 'q']:
+        print("Exiting program.")
+        exit()
     # reject invalid feeder number
-    if feeder_number.lower() not in ['1', '2', 'a', 'all']:
+    if feeder_number not in ['1', '2', 'a', 'all']:
         print("Invalid feeder number. Please enter 1, 2, or A.")
         return get_feeder_number_flex()  # Retry
-    if feeder_number.lower() in ['all', 'a']:
+    if feeder_number in ['all', 'a']:
         return "all"
     else:
         return int(feeder_number)
@@ -162,7 +162,10 @@ def get_feeder_number_flex() -> int | str:
 
 def get_feeder_number_single() -> int:
     feeder_number = input(
-        "Enter feeder number to add schedule to: [1 Under ***REMOVED***, 2 ***REMOVED***]: ").strip()
+        "Enter feeder number to add schedule to: [1 Under ***REMOVED***, 2 ***REMOVED***]: ").strip().lower()
+    if feeder_number in ['exit', 'x', 'quit', 'q']:
+        print("Exiting program.")
+        exit()
     # reject invalid feeder number
     if feeder_number not in ['1', '2']:
         print("Invalid feeder number. Please enter 1 or 2 only.")
@@ -173,9 +176,12 @@ def get_feeder_number_single() -> int:
 
 def get_amount() -> int | str:
     amount = input(
-        "Enter units to feed (1 unit = 1/8 cup), or AUTO: ").strip()
+        "Enter units to feed (1 unit = 1/8 cup), or AUTO: ").strip().lower()
     # reject invalid amount
-    if not amount.isdigit() or int(amount) < 1 and amount not in ['auto', 'AUTO', 'Auto', 'a', 'A']:
+    if amount in ['exit', 'x', 'quit', 'q']:
+        print("Exiting program.")
+        exit()
+    if (not amount.isdigit() or int(amount) < 1) and amount not in ['auto', 'a']:
         print("Invalid amount. Please enter a positive integer, or 'AUTO'.")
         return get_amount()  # Retry
     if amount.lower() in ['auto', 'a']:
@@ -321,14 +327,14 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
 
 # -- ADD SCHEDULE FUNCTION --
-def add_schedule(time: str, amount: int | str, feeder_number: int) -> None:
-    amount = str(amount)
-    feeder_number = str(feeder_number)
-    script_path = "./add_scheduled_feed.sh"
+def add_schedule(time: str, amount: int | str, feeder_number: int | str) -> None:
+    amount: str = str(amount)
+    feeder_number: str = str(feeder_number)
+    script_path: str = "./add_scheduled_feed.sh"
 
     # 1. Translate 'auto' amount
     if amount == "auto":
-        amount = feeders_list[feeder_number]["default_amount"]
+        amount = str(feeders_list[feeder_number]["default_amount"])
 
     try:
         # 2. Call the script with the arguments
@@ -432,8 +438,8 @@ def task_input() -> None:
         all_schedules: list[tuple] = view_schedule(clean_data)
 
         # Prompt for machine & time to remove
-        feeder_number = get_feeder_number_flex()
         time = get_time()
+        feeder_number = get_feeder_number_flex()
 
         # Call remove function. Validation is handled inside function.
         if feeder_number == "all":
@@ -459,6 +465,12 @@ def task_input() -> None:
 
 # --- MAIN FUNCTION ---
 def main():
+    # DEBUG: Print timestamp
+    print("================================")
+    print("⭐️ RUN TIME:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    print("================================")
+    print("")
+
     task_input()
 
 

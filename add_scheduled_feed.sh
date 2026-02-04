@@ -2,7 +2,7 @@
 
 # --- CONFIGURATION ---
 # Replace this with the absolute path to your Python script
-PYTHON_SCRIPT="/usr/local/bin/feed_now.py"
+PYTHON_SCRIPT="/Users/gordonschoenfeld/Python/PetSafe/feed_now.py"
 # We assume 'python3' is in the path, but using full path is safer (e.g., /usr/bin/python3)
 PYTHON_EXEC="/usr/bin/python3"
 # ---------------------
@@ -40,11 +40,11 @@ NEW_JOB="$CRON_SCHEDULE $FULL_COMMAND"
 
 # 5. Add the job idempotently
 # Checks if a job with this exact command AND arguments already exists
-if crontab -l 2>/dev/null | grep -Fq "$FULL_COMMAND"; then
-    echo "A job for Feeder $FEEDER_NUM with Amount $AMOUNT already exists."
+if crontab -l 2>/dev/null | grep -Fq "$NEW_JOB"; then
+    echo "A job for Feeder $FEEDER_NUM with Amount $AMOUNT at $HOUR:$MINUTE already exists."
     echo "Skipping to prevent duplicates."
 else
     (crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -
     echo "Success! Cron job created:"
-    echo "   Time:   $HOUR:$MINUTE daily | Feeder #: $FEEDER_NUM | Amount: $AMOUNT"
+    echo "   Time: $HOUR:$MINUTE daily  |  Feeder: $FEEDER_NUM  |  Amount: $AMOUNT units"
 fi

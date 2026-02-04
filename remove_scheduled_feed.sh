@@ -34,4 +34,4 @@ fi
 # grep -v keeps everything that does NOT match the pattern
 (crontab -l 2>/dev/null | grep -v "$SEARCH_PATTERN") | crontab -
 
-echo "Success: Removed schedule for Feeder ${FEEDER_ID} at ${TIME_VAL}."
+echo "Removed schedule for Feeder ${FEEDER_ID} at ${TIME_VAL}."
