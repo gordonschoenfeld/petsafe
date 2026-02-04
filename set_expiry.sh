@@ -15,6 +15,10 @@ TARGET_MIN=$4
 FEEDER_NUM=$5
 AMOUNT=$6
 
+# Strip leading zeros to match crontab format (e.g., "08" -> "8")
+TARGET_HOUR=$((10#$TARGET_HOUR))
+TARGET_MIN=$((10#$TARGET_MIN))
+
 # --- CHECK FOR COMMANDS ---
 if ! command -v crontab &> /dev/null; then
     echo "Error: 'crontab' command not found."
@@ -46,7 +50,11 @@ fi
 # 2. Grep -v -E (Remove Extended Regex) -> Removes the specific feeding time
 # 3. Grep -v -F (Remove Fixed String)   -> Removes this specific expiry job
 # 4. Write back to crontab
-KILLER_CMD="crontab -l | grep -E -v '$FEED_PATTERN' | grep -F -v '$EXPIRY_TAG' | crontab -"
+# Bug fix: The random number is generated NOW and hardcoded into the job, to avoid collisions
+# We use Python to sleep for a random float between 0 and 20 seconds.
+# This prevents race conditions by spreading execution across millions of possible start times.
+RANDOM_SLEEP="import time,random; time.sleep(random.random() * 20)"
+KILLER_CMD="/usr/local/bin/python3 -c '$RANDOM_SLEEP' && crontab -l | grep -E -v '$FEED_PATTERN' | grep -F -v '$EXPIRY_TAG' | crontab -"
 
 # --- SCHEDULE THE JOB ---
 # Cron format: 59 23 Day Month * Command
