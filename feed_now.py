@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 
-import petsafe_smartfeed as sf
-import json
-import sys
-
-
 # Input format:   python3 feed_now.py <feeder_number> <amount>
 # Input example:  python3 feed_now.py 1 1
 
 # NOTE: This script cannot understand 'auto' amount. It must be interpreted upstream.
 
+import sys
+import json
+import petsafe_smartfeed as sf
 
 # --- AUTH SETUP ---
 try:
-    with open("/Users/gordonschoenfeld/Python/PetSafe/petsafe_tokens.json", "r") as f:
+    with open("petsafe_tokens.json", "r") as f:
         saved_tokens = json.load(f)
 except FileNotFoundError:
     print("Error: Tokens file not found.")

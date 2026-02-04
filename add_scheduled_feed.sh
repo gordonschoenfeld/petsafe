@@ -2,7 +2,7 @@
 
 # --- CONFIGURATION ---
 # Replace this with the absolute path to your Python script
-PYTHON_SCRIPT="/Users/gordonschoenfeld/Python/PetSafe/feed_now.py"
+PYTHON_SCRIPT="/feed_now.py"
 # We assume 'python3' is in the path, but using full path is safer
 PYTHON_EXEC="/usr/local/bin/python3"
 # Log file location (Matches what we used in manual debugging)
