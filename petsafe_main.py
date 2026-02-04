@@ -6,7 +6,7 @@ import json
 import requests
 import subprocess
 import petsafe_smartfeed as sf
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 # --- START MONKEY PATCH ---
