@@ -4,7 +4,7 @@
 # Replace this with the absolute path to your Python script
 PYTHON_SCRIPT="/Users/gordonschoenfeld/Python/PetSafe/feed_now.py"
 # We assume 'python3' is in the path, but using full path is safer (e.g., /usr/bin/python3)
-PYTHON_EXEC="/usr/bin/python3"
+PYTHON_EXEC="/usr/local/bin/python3"
 # ---------------------
 
 # 1. Input Validation

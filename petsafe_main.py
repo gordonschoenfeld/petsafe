@@ -134,6 +134,9 @@ def get_id_by_number(clean_data, target_number) -> int | None:
 def get_time() -> str:
     time = input(
         "Enter feed time (24-hour format HH:MM): ").strip().lower()
+    if time in ['exit', 'x', 'quit', 'q']:
+        print("Exiting program.")
+        exit()
     # reject invalid time format
     if not re.match(r'^([01]\d|2[0-3]):?([0-5]\d)$', time):
         print("Invalid time format. Please use HH:MM (00:00 to 23:59).")
@@ -413,6 +416,7 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
 
 
 # TODO: Create scheduled removal (cron job to trigger remove_scheduled_feed.sh in the future)
+# Example usage of "at":       `$ echo "/path/to/remove_scheduled_feeding.sh" | at 12:00 Feb 4`
 
 # --- MAIN INPUT FUNCTION ---
 def task_input() -> None:
