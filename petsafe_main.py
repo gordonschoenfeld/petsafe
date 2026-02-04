@@ -6,7 +6,7 @@ import json
 import requests
 import subprocess
 import petsafe_smartfeed as sf
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 # --- START MONKEY PATCH ---
@@ -58,26 +58,35 @@ def patched_refresh_tokens(self):
 sf.PetSafeClient.refresh_tokens = patched_refresh_tokens
 # --- END MONKEY PATCH ---
 
+# Initialize globals to None
+client = None
+feeders_list = {}
 
-# Load tokens
-try:
-    with open("/Users/gordonschoenfeld/Python/PetSafe/petsafe_tokens.json", "r") as f:
-        saved_tokens = json.load(f)
-except FileNotFoundError:
-    print("Error: 'petsafe_tokens.json' not found. Please run auth_setup.py first, and ensure it is in the correct directory.")
-    exit()
 
-# Initialize client
-client = sf.PetSafeClient(
-    email=saved_tokens["email"],
-    id_token=saved_tokens["id_token"],
-    refresh_token=saved_tokens["refresh_token"],
-    access_token=saved_tokens["access_token"]
-)
+def initialize_resources():
+    # Loads tokens and connects to client. Moved to a function to prevent startup latency.
+    global client, feeders_list
 
-# Fetch default amounts per feeder.
-with open("feeders_general_info.json", "r") as f:
-    feeders_list = json.load(f)
+    # Load tokens
+    try:
+        # Update this path if necessary
+        with open("/Users/gordonschoenfeld/Python/PetSafe/petsafe_tokens.json", "r") as f:
+            saved_tokens = json.load(f)
+    except FileNotFoundError:
+        print("Error: 'petsafe_tokens.json' not found. Please run auth_setup.py first.")
+        exit()
+
+    # Initialize client (The slow part: Network connection)
+    client = sf.PetSafeClient(
+        email=saved_tokens["email"],
+        id_token=saved_tokens["id_token"],
+        refresh_token=saved_tokens["refresh_token"],
+        access_token=saved_tokens["access_token"]
+    )
+
+    # Fetch default amounts per feeder
+    with open("feeders_general_info.json", "r") as f:
+        feeders_list = json.load(f)
 
 
 # --- FETCH FEEDER INFO & GENERATE `clean_data` DICT ---
@@ -191,6 +200,96 @@ def get_amount() -> int | str:
         return "auto"
     else:
         return int(amount)
+
+
+def get_date() -> tuple[str] | None:
+    def normalize_date(date_str: str) -> tuple[str]:
+        # Regex Breakdown:
+        # 1. (0?[1-9]|1[0-2]) : Capture Group 1 (Month) - 1-12, optional leading zero
+        # 2. \/?              : Optional Slash (ignored)
+        # 3. (0?[1-9]|[12]\d|3[01]) : Capture Group 2 (Day) - 1-31, optional leading zero
+
+        match = re.match(
+            r'^(0?[1-9]|1[0-2])\/?(0?[1-9]|[12]\d|3[01])$', date_str)
+
+        if match:
+            month, day = match.groups()
+
+            # Enforce 4-digit logic: if input was "0809", regex splits it correctly.
+            # If input was "89", regex might match (8, 9), but that is usually ambiguous.
+            # This regex assumes standard separators or clear 4-digit blocks.
+
+            # Return tuple with leading zeros
+            return (month.zfill(2), day.zfill(2))
+        else:
+            return None
+
+    def validate_date(date_str: str, now=None):
+        # Regex Breakdown (3 Distinct Branches):
+        # 1. Slash Required:  8/9, 08/09, 12/31
+        # 2. 4-Digit Strict:  0809, 1231
+        # 3. 2-Digit Strict:  12 (splits to 1/2), 89 (splits to 8/9)
+        #    Note: Uses [1-9] to ensure we don't match "10" (Day 0 is invalid)
+
+        pattern = (
+            r'^(?:'
+            r'(0?[1-9]|1[0-2])\/(0?[1-9]|[12]\d|3[01])|'  # Branch 1: Slash
+            r'(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])|'      # Branch 2: 4-Digit
+            r'([1-9])([1-9])'                             # Branch 3: 2-Digit
+            r')$'
+        )
+
+        match = re.match(pattern, date_str)
+
+        if not match:
+            raise ValueError(
+                f"Invalid format: '{date_str}'. Accepted: M/D, MMDD, or MD.")
+
+        # Extract groups. The regex has 6 groups total (2 per branch).
+        # We find the pair that isn't None.
+        g = match.groups()
+        month_str = g[0] or g[2] or g[4]
+        day_str = g[1] or g[3] or g[5]
+
+        month, day = int(month_str), int(day_str)
+
+        # --- Standard Date Logic (Same as before) ---
+        if now is None:
+            now = datetime.now()
+
+        try:
+            candidate_date = datetime(now.year, month, day, 12, 0, 0)
+        except ValueError:
+            if month == 2 and day == 29:
+                candidate_date = None
+            else:
+                raise ValueError(f"Invalid calendar date: {month}/{day}")
+
+        if candidate_date is None or candidate_date < now:
+            try:
+                candidate_date = datetime(now.year + 1, month, day, 12, 0, 0)
+            except ValueError:
+                raise ValueError(
+                    f"Date {month}/{day} does not exist in the upcoming year.")
+
+        return candidate_date
+
+    date = input(
+        "Enter date (MM/DD): ").strip().lower()
+    if date in ['exit', 'x', 'quit', 'q']:
+        print("Exiting program.")
+        exit()
+    if date.strip().lower() in ['none', 'no', 'n']:
+        return None
+    # reject invalid date format
+    if not re.match(r'^(?:(?:0?[1-9]|1[0-2])\/(?:0?[1-9]|[12]\d|3[01])|(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01]))$', date):
+        print("Invalid date format. Please use MM/DD.")
+        return get_date()  # Retry
+    # return valid date
+    else:
+        date_str = normalize_date(date)
+        date_str_valid = validate_date(date_str)
+        return date_str_valid
 
 
 # -- VIEW SCHEDULE FUNCTION --
@@ -423,10 +522,62 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
         return False
 
 
-# TODO: Create scheduled removal (cron job to trigger remove_scheduled_feed.sh in the future)
-# Example usage of "at":       `$ echo "/path/to/remove_scheduled_feeding.sh" | at 12:00 Feb 4`
+def set_expiry(kill_date: tuple[str], amount: int | str, feeder_number: int) -> bool:
+    """
+    Calls set_expiry.sh to schedule a self-destructing cron job.
 
-# --- MAIN INPUT FUNCTION ---
+    Args:
+        month (str): Month as "MM" or "M" (e.g., "02" or "2").
+        day (str): Day as "DD" or "D" (e.g., "15" or "5").
+        feeder_number (int): 1 or 2.
+        amount (int | str): The amount to stop feeding (e.g., 5 or "auto").
+    """
+    script_path = "./set_expiry.sh"
+
+    kill_month, kill_day = kill_date
+
+    # 1. Basic Validation (Optional, but saves a shell call)
+    if not (kill_month.isdigit() and kill_day.isdigit()):
+        print("❌ Error: Month and Day must be numbers.")
+        return False
+
+    if not (1 <= int(kill_month) <= 12) or not (1 <= int(kill_day) <= 31):
+        print(f"❌ Error: Invalid date {kill_month}/{kill_day}.")
+        return False
+
+    # 2. Handle 'auto' amount if passed
+    # TODO: change to real interpretation
+    if str(amount).lower() in ["auto", "a"]:
+        print("❌ Error: Expiry requires a specific amount (e.g., 1, 2, 5). 'Auto' is ambiguous.")
+        return False
+
+    try:
+        # 3. Call the Shell Script
+        # Arguments: ./set_expiry.sh <MONTH> <DAY> <FEEDER_ID> <AMOUNT>
+        result = subprocess.run(
+            [script_path, str(kill_month), str(kill_day), str(
+                feeder_number), str(amount)],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        # 4. Success Feedback
+        print(f"Success: {result.stdout.strip()}")
+        return True
+
+    except subprocess.CalledProcessError as e:
+        # 5. Error Feedback
+        print(f"Failed to set expiry: {e.stderr.strip() or e.stdout.strip()}")
+        return False
+
+    except FileNotFoundError:
+        print(
+            f"Error: '{script_path}' not found. Make sure it exists and is executable.")
+        return False
+
+
+# --- MAIN INPUT TREE FUNCTION ---
 def task_input() -> None:
     action = input(
         "Select action: Add (A), Remove (R), View (V), Exit (X): ").strip().lower()
@@ -436,11 +587,21 @@ def task_input() -> None:
         time = get_time()
         feeder_number = get_feeder_number_flex()
         amount = get_amount()
+        kill_date = get_date()
+
         if feeder_number == "all":
             add_schedule(time, amount, 1)
             add_schedule(time, amount, 2)
         else:
             add_schedule(time, amount, feeder_number)
+
+        # if kill date supplied, trigger set_expiry
+        if kill_date:
+            if feeder_number == "all":
+                set_expiry(kill_date, amount, 1)
+                set_expiry(kill_date, amount, 2)
+            else:
+                set_expiry(kill_date, amount, feeder_number)
 
     # INPUT: REMOVE ACTION
     elif action in ['remove', 'r', 'rm', 'd', 'del', 'delete']:
@@ -477,12 +638,17 @@ def task_input() -> None:
 
 # --- MAIN FUNCTION ---
 def main():
-    # DEBUG: Print timestamp
+    # 1. Print timestamp immediately
     print("================================")
     print("⭐️ RUN TIME:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     print("================================")
     print("")
 
+    # 2. Now connect to the internet/load files, with the "Initializing client" message to be overwritten by the actual next line.
+    print("Initializing client...", end="\r")  # Optional: Status indicator
+    initialize_resources()
+
+    # 3. Proceed
     task_input()
 
 
