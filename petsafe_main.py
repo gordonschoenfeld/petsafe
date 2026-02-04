@@ -70,7 +70,7 @@ def initialize_resources():
     # Load tokens
     try:
         # Update this path if necessary
-        with open("/Users/gordonschoenfeld/Python/PetSafe/petsafe_tokens.json", "r") as f:
+        with open("petsafe_tokens.json", "r") as f:
             saved_tokens = json.load(f)
     except FileNotFoundError:
         print("Error: 'petsafe_tokens.json' not found. Please run auth_setup.py first.")
