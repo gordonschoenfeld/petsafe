@@ -221,41 +221,47 @@ def view_schedule(clean_data: dict) -> list[tuple]:
     def parse_cron_line(line) -> tuple | None:
         """
         Parses a single cron line to extract time, feeder, and amount.
-        Assumes format: MIN HOUR * * * python_path script_path FEEDER_ID AMOUNT
+        Assumes format: MIN HOUR * * * cd dir_path && python_path script_path FEEDER_ID AMOUNT >> logfile 2>&1
         """
         # The name of the script we are looking for in the cron list
         target_script = "feed_now.py"
-
         parts = line.split()
 
-        # Basic check: Cron lines usually have at least 5 time fields + command
-        if len(parts) < 6:
+        # 1. Basic check
+        if len(parts) < 6 or target_script not in line:
             return None
 
-        # Check if this line is running our target script
-        if target_script not in line:
-            return None
-
-        # Extract Time
-        minute = parts[0].zfill(2)  # 0 -> 00
-        hour = parts[1].zfill(2)   # 8 -> 08
+        # 2. Extract Time (First two standard fields)
+        minute = parts[0].zfill(2)
+        hour = parts[1].zfill(2)
         time_str = f"{hour}:{minute}"
 
-        # Extract Arguments
-        # Based on set_schedule.sh, arguments are indices [10, 11]: [ID, AMOUNT]
-        # Example:
-        #  29 22 * * * cd /Users/gordonschoenfeld/Python/PetSafe && /usr/local/bin/python3 feed_now.py 1 1 >> /tmp/pet_cron.log 2>&1
+        # 3. Extract Arguments Dynamically
+        # We find the index of 'feed_now.py' and look at the neighbors (index+1, index+2)
         try:
-            amount = int(parts[10])
-            feeder_id = parts[11]
-        except IndexError:
+            script_idx = parts.index(target_script)
+
+            # Arg 1 (Feeder ID) is right after the script name
+            feeder_id = parts[script_idx + 1]
+
+            # Arg 2 (Amount) is right after Feeder ID
+            amount = int(parts[script_idx + 2])
+
+        except (ValueError, IndexError):
+            # ValueError: target_script not in list (though we checked string earlier)
+            # IndexError: Line ends too early (missing arguments)
             return None
 
-        # Lookup friendly name, default to "Feeder #ID" if not in dict
-        with open("feeders_general_info.json", "r") as f:
-            feeders_list = json.load(f)
-        feeder_name = feeders_list.get(feeder_id, {}).get(
-            "name", f"Feeder #{feeder_id}")
+        # 4. Lookup friendly name
+        # Ensure this path is correct relative to where you run this viewing script!
+        try:
+            with open("feeders_general_info.json", "r") as f:
+                feeders_list = json.load(f)
+                # Assuming feeders_list is a Dict where keys are strings
+                feeder_info = feeders_list.get(str(feeder_id), {})
+                feeder_name = feeder_info.get("name", f"Feeder #{feeder_id}")
+        except (FileNotFoundError, json.JSONDecodeError):
+            feeder_name = f"Feeder #{feeder_id}"
 
         return feeder_name, time_str, amount, ""
 
