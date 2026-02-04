@@ -3,8 +3,10 @@
 # --- CONFIGURATION ---
 # Replace this with the absolute path to your Python script
 PYTHON_SCRIPT="/Users/gordonschoenfeld/Python/PetSafe/feed_now.py"
-# We assume 'python3' is in the path, but using full path is safer (e.g., /usr/bin/python3)
+# We assume 'python3' is in the path, but using full path is safer
 PYTHON_EXEC="/usr/local/bin/python3"
+# Log file location (Matches what we used in manual debugging)
+LOG_FILE="/tmp/pet_cron.log"
 # ---------------------
 
 # 1. Input Validation
@@ -21,7 +23,7 @@ AMOUNT=$3
 # 2. Parse Time (HH:MM)
 IFS=':' read -r HOUR MINUTE <<< "$TIME_INPUT"
 
-# Validate time (Force decimal interpretation with 10# to handle leading zeros like 08 or 09)
+# Validate time (Force decimal interpretation with 10# to handle leading zeros)
 if ! [[ "$HOUR" =~ ^[0-9]+$ ]] || ! [[ "$MINUTE" =~ ^[0-9]+$ ]] || \
    [ "$((10#$HOUR))" -lt 0 ] || [ "$((10#$HOUR))" -gt 23 ] || \
    [ "$((10#$MINUTE))" -lt 0 ] || [ "$((10#$MINUTE))" -gt 59 ]; then
@@ -30,8 +32,13 @@ if ! [[ "$HOUR" =~ ^[0-9]+$ ]] || ! [[ "$MINUTE" =~ ^[0-9]+$ ]] || \
 fi
 
 # 3. Construct the Cron Command
-# The python script receives feeder_id as arg1 and amount as arg2
-FULL_COMMAND="$PYTHON_EXEC $PYTHON_SCRIPT $FEEDER_NUM $AMOUNT"
+# Extract the directory so we can 'cd' into it
+PROJECT_DIR=$(dirname "$PYTHON_SCRIPT")
+SCRIPT_NAME=$(basename "$PYTHON_SCRIPT")
+
+# We construct the command to:
+# 1. Change Directory (cd) -> 2. Run Python -> 3. Log Output
+FULL_COMMAND="cd $PROJECT_DIR && $PYTHON_EXEC $SCRIPT_NAME $FEEDER_NUM $AMOUNT >> $LOG_FILE 2>&1"
 
 # 4. Construct the Schedule
 # Minute Hour DayOfMonth Month DayOfWeek
@@ -46,5 +53,8 @@ if crontab -l 2>/dev/null | grep -Fq "$NEW_JOB"; then
 else
     (crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -
     echo "Success! Cron job created:"
-    echo "   Time: $HOUR:$MINUTE daily  |  Feeder: $FEEDER_NUM  |  Amount: $AMOUNT units"
+    echo "   Time:   $HOUR:$MINUTE daily"
+    echo "   Feeder: $FEEDER_NUM"
+    echo "   Amount: $AMOUNT units"
+    echo "   Log:    $LOG_FILE"
 fi

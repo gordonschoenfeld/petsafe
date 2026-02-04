@@ -242,10 +242,12 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         time_str = f"{hour}:{minute}"
 
         # Extract Arguments
-        # Based on set_schedule.sh, arguments are the LAST two items: [ID, AMOUNT]
+        # Based on set_schedule.sh, arguments are indices [10, 11]: [ID, AMOUNT]
+        # Example:
+        #  29 22 * * * cd /Users/gordonschoenfeld/Python/PetSafe && /usr/local/bin/python3 feed_now.py 1 1 >> /tmp/pet_cron.log 2>&1
         try:
-            amount = int(parts[-1])
-            feeder_id = parts[-2]
+            amount = int(parts[10])
+            feeder_id = parts[11]
         except IndexError:
             return None
 
