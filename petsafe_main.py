@@ -163,30 +163,19 @@ def get_feeder_number_flex() -> int | str:
     if feeder_number in ['exit', 'x', 'quit', 'q']:
         print("Exiting program.")
         exit()
+    # all option
+    elif feeder_number in ['all', 'a']:
+        return "all"
+    # option 1. under stairs
+    elif feeder_number.lower().strip() in ['1', '1.', 'under stairs', 'us', 'u', 'under', 'stairs', 's']:
+        return 1
+    # option 2. island
+    elif feeder_number.lower().strip() in ['2', '2.', 'island', 'i']:
+        return 2
     # reject invalid feeder number
-    if feeder_number not in ['1', '2', 'a', 'all']:
+    else:
         print("Invalid feeder number. Please enter 1, 2, or A.")
         return get_feeder_number_flex()  # Retry
-    # all option
-    if feeder_number in ['all', 'a']:
-        return "all"
-    else:
-        return int(feeder_number)
-
-
-def get_feeder_number_single() -> int:
-    feeder_number = input(
-        "Enter feeder number to add schedule to: [1 ***REDACTED***, 2 ***REDACTED***]: ").strip().lower()
-    # escape hatch
-    if feeder_number in ['exit', 'x', 'quit', 'q']:
-        print("Exiting program.")
-        exit()
-    # reject invalid feeder number
-    if feeder_number not in ['1', '2']:
-        print("Invalid feeder number. Please enter 1 or 2 only.")
-        return get_feeder_number_single()  # Retry
-    else:
-        return int(feeder_number)
 
 
 def get_amount() -> int | str:
@@ -636,16 +625,19 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
     # Validation
     feeder_id: int = get_id_by_number(clean_data, feeder_number)
 
-    matching_result_app = [item for item in all_schedules if item[0] == clean_data[feeder_id]['name'] and item[1]
-                           == time and item[4] == "Set in app"]
-    if matching_result_app:
+    matching_result = [item for item in all_schedules if item[0] == clean_data[feeder_id]['name'] and item[1]
+                       == time]
+    matching_result_app = [
+        item for item in matching_result if item[4] == "Set in app"]
+    matching_result_nonapp = [
+        item for item in matching_result if item[4] != "Set in app"]
+
+    if matching_result_app and not matching_result_nonapp:
         print(
             f"❌ Cannot remove schedule at {time} for Feeder #{feeder_number}.")
         print(f"Please remove it via the PetSafe SmartFeed app 📲.")
         return
 
-    matching_result = [item for item in all_schedules if item[0] == clean_data[feeder_id]['name'] and item[1]
-                       == time]
     if not matching_result:
         print(
             f"❌ No schedule found at {time} for Feeder #{feeder_number}. Cannot remove.")
