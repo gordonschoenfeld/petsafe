@@ -707,6 +707,11 @@ def task_input() -> None:
             else:
                 set_expiry(kill_date, time, amount, feeder_number)
 
+        # Show new schedules
+        clean_data: dict = fetch_feeder_info()
+        print(f"Updated schedules:")
+        view_schedule(clean_data)
+
     # INPUT: REMOVE ACTION
     elif action in ['remove', 'r', 'rm', 'd', 'del', 'delete']:
         # Print current schedules, for user reference
@@ -724,6 +729,10 @@ def task_input() -> None:
             remove_schedule(time, 2, clean_data, all_schedules)
         else:
             remove_schedule(time, feeder_number, clean_data, all_schedules)
+
+        # Show new schedules
+        print(f"Updated schedules:")
+        view_schedule(clean_data)
 
     # INPUT: VIEW ACTION
     elif action in ['view', 'v', 'list', 'show']:
