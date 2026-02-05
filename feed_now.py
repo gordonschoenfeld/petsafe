@@ -3,8 +3,6 @@
 # Input format:   python3 feed_now.py <feeder_number> <amount>
 # Input example:  python3 feed_now.py 1 1
 
-# NOTE: This script cannot understand 'auto' amount. It must be interpreted upstream.
-
 import sys
 import json
 import petsafe_smartfeed as sf

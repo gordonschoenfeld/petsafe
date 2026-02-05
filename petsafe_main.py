@@ -180,18 +180,18 @@ def get_feeder_number_flex() -> int | str:
 
 def get_amount() -> int | str:
     amount = input(
-        "Enter units to feed (1 unit = 1/8 cup), or AUTO: ").strip().lower()
+        "Enter units to feed (1 unit = 1/8 cup), or DEFAULT: ").strip().lower()
     # escape hatch
     if amount in ['exit', 'x', 'quit', 'q']:
         print("Exiting program.")
         exit()
     # reject invalid amount
-    if (not amount.isdigit() or int(amount) < 1) and amount not in ['auto', 'a']:
-        print("Invalid amount. Please enter a positive integer, or 'AUTO'.")
+    if (not amount.isdigit() or int(amount) < 1) and amount not in ['default', 'd', 'auto', 'a']:
+        print("Invalid amount. Please enter a positive integer, or 'DEFAULT'.")
         return get_amount()  # Retry
-    # auto option
-    if amount.lower() in ['auto', 'a']:
-        return "auto"
+    # default option
+    if amount.lower() in ['default', 'd', 'auto', 'a']:
+        return "default"
     else:
         return int(amount)
 
@@ -532,8 +532,8 @@ def add_schedule(time: str, amount: int | str, feeder_number: int | str) -> None
     feeder_number: str = str(feeder_number)
     script_path: str = "./add_scheduled_feed.sh"
 
-    # 1. Translate 'auto' amount
-    if amount == "auto":
+    # 1. Translate 'default' amount
+    if amount == "default":
         amount = str(feeders_list[feeder_number]["default_amount"])
 
     try:
@@ -569,7 +569,7 @@ def set_expiry(kill_date: tuple[str], time: str, amount: int | str, feeder_numbe
         month (str): Month as "MM" or "M" (e.g., "02" or "2").
         day (str): Day as "DD" or "D" (e.g., "15" or "5").
         feeder_number (int): 1 or 2.
-        amount (int | str): The amount to stop feeding (e.g., 5 or "auto").
+        amount (int | str): The amount to stop feeding (e.g., 5 or "default").
     """
     script_path = "./set_expiry.sh"
 
@@ -589,8 +589,8 @@ def set_expiry(kill_date: tuple[str], time: str, amount: int | str, feeder_numbe
         print(f"❌ Error: Invalid date {kill_month}/{kill_day}.")
         return False
 
-    # 2. Handle 'auto' amount
-    if str(amount).lower() in ["auto", "a"]:
+    # 2. Handle 'default' amount
+    if str(amount).lower() in ['default', 'd', 'auto', 'a']:
         amount = str(feeders_list[str(feeder_number)]["default_amount"])
 
     try:
