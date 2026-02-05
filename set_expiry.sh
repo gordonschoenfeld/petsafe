@@ -16,8 +16,11 @@ FEEDER_NUM=$5
 AMOUNT=$6
 
 # Strip leading zeros to match crontab format (e.g., "08" -> "8")
-TARGET_HOUR=$((10#$TARGET_HOUR))
-TARGET_MIN=$((10#$TARGET_MIN))
+TARGET_HOUR_INT=$((10#$TARGET_HOUR))
+TARGET_MIN_INT=$((10#$TARGET_MIN))
+
+# This ensures Python can parse it reliably as HHMM
+TAG_TIME=$(printf "%02d%02d" $TARGET_HOUR_INT $TARGET_MIN_INT)
 
 # --- CHECK FOR COMMANDS ---
 if ! command -v crontab &> /dev/null; then
@@ -31,12 +34,12 @@ fi
 # Logic: Anchored to start of line (^)
 # Matches: Minute -> Space -> Hour -> Space -> (Wildcards) -> feed_now.py -> ID -> Amount
 # Note: [ \t]+ matches both tabs and spaces.
-FEED_PATTERN="^$TARGET_MIN[ \t]+$TARGET_HOUR[ \t]+.*feed_now.py $FEEDER_NUM $AMOUNT"
+FEED_PATTERN="^$TARGET_MIN_INT[ \t]+$TARGET_HOUR_INT[ \t]+.*feed_now.py $FEEDER_NUM $AMOUNT"
 
 # 2. The Expiry Tag
 # Updated to include TIME in the tag name. 
 # This prevents conflicts if you schedule different expiries for 8:00 vs 18:00 on the same day.
-EXPIRY_TAG="# EXPIRY_AUTO_REMOVE_F${FEEDER_NUM}_A${AMOUNT}_T${TARGET_HOUR}${TARGET_MIN}"
+EXPIRY_TAG="# EXPIRY_AUTO_REMOVE_F${FEEDER_NUM}_A${AMOUNT}_T${TAG_TIME}"
 
 # --- CHECK FOR EXISTING EXPIRY ---
 if crontab -l 2>/dev/null | grep -Fq "$EXPIRY_TAG"; then
