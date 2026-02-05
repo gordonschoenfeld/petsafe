@@ -207,6 +207,28 @@ def get_amount() -> int | str:
         return int(amount)
 
 
+def convert_date_to_day(date_str) -> str:
+    # Takes MM/DD as input
+
+    # 1. Get the current date (normalized to midnight for accurate comparison)
+    now = datetime.now()
+
+    # 2. Parse the "MM/DD" string using the current year temporarily
+    # We append the current year to make it a valid datetime object
+    dt_object = datetime.strptime(f"{date_str}/{now.year}", "%m/%d/%Y")
+
+    # 3. Check if this date is in the past
+    # (We compare .date() to ignore the specific time of day)
+    if dt_object.date() < now.date():
+        # If it's in the past, add 1 to the year
+        dt_object = dt_object.replace(year=now.year + 1)
+
+    # 4. Get the 3-letter weekday abbreviation based on the correct year
+    day_abbr = dt_object.strftime("%a")
+
+    return day_abbr
+
+
 def get_date(clarifying_text: str = None) -> tuple[str] | None:
     def normalize_date(date_str: str) -> tuple[str]:
         # Regex Breakdown:
@@ -229,7 +251,7 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
         else:
             return None
 
-    def validate_date(date_str: str, now=None):
+    def validate_date(date_str: str, now=None) -> tuple[str]:
         # Regex Breakdown (3 Distinct Branches):
         # 1. Slash Required:  8/9, 08/09, 12/31
         # 2. 4-Digit Strict:  0809, 1231
@@ -258,7 +280,6 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
 
         month, day = int(month_str), int(day_str)
 
-        # --- Standard Date Logic (Same as before) ---
         if now is None:
             now = datetime.now()
 
@@ -281,16 +302,17 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
 
     if clarifying_text:
         raw_date_input = input(
-            f"Enter {clarifying_text} date (MM/DD): ").strip().lower()
+            f"Enter {clarifying_text} date (MM/DD), or 'NONE': ").strip().lower()
     else:
-        raw_date_input = input(f"Enter date (MM/DD): ").strip().lower()
+        raw_date_input = input(
+            f"Enter date (MM/DD), or 'NONE': ").strip().lower()
 
     # escape hatch
     if raw_date_input in ['exit', 'x', 'quit', 'q']:
         print("Exiting program.")
         exit()
     # allow none
-    if raw_date_input.strip().lower() in ['none', 'no', 'n']:
+    if raw_date_input.strip().lower() in ['never', 'none', 'no', 'n']:
         return None
 
     # 1. VALIDATE the raw string (e.g., "8/9")
@@ -300,7 +322,7 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
         return None
 
     # 2. NORMALIZE after validation is successful
-    # This turns "8/9" into ('08', '09') or a datetime object
+    # This turns "8/9" into ('08', '09')
     clean_date = normalize_date(raw_date_input)
 
     # return valid date
@@ -310,7 +332,6 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
 
 # -- 👀 VIEW SCHEDULE FUNCTION --
 def view_schedule(clean_data: dict) -> list[tuple]:
-    # TODO: display the exp date
 
     # --- FETCH CRON SCHEDULES ---
     def get_cron_lines() -> list:
@@ -393,13 +414,21 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         if match:
             data = match.groupdict()
 
-            with open("feeders_general_info.json", "r") as f:
-                feeders_list = json.load(f)
+            try:
+                with open("feeders_general_info.json", "r") as f:
+                    feeders_list = json.load(f)
 
-            # Assemble output vars
-            feeder_num: str = str(data['feeder'])
-            feeder_name: str = feeders_list[feeder_num]['name']
+                # Assemble output vars
+                feeder_num: str = str(data['feeder'])
+                # Use .get to avoid crashes if JSON is out of sync
+                feeder_info = feeders_list.get(feeder_num, {})
+                feeder_name: str = feeder_info.get(
+                    'name', f"Feeder #{feeder_num}")
+            except (FileNotFoundError, json.JSONDecodeError):
+                feeder_name = f"Feeder #{data['feeder']}"
+
             date = f"{data['month']}/{data['day']}"
+
             # Convert 1030 to 10:30
             time_str = f"{data['time'][:2]}:{data['time'][2:]}"
             amount = data['amount']
@@ -407,15 +436,41 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             return date, feeder_name, time_str, amount
 
     def get_cron_schedules() -> list[tuple]:
-        cron_schedules = []
         cron_lines = get_cron_lines()
-        for line in cron_lines:
-            parsed = parse_cron_add_line(line)
-            if parsed:
-                cron_schedules.append(parsed)
-        return cron_schedules
+        feeding_jobs = []
+        expiry_lookup = {}
 
-        # TODO merge in lookups of parse_cron_expiry_line(line)
+        # --- PASS 1: Build Expiry Lookup ---
+        for line in cron_lines:
+            expiry_data = parse_cron_expiry_line(line)
+            if expiry_data:
+                date_str, feeder_name, time_str, amount_str = expiry_data
+
+                # Convert amount to int to ensure it matches the integer from parse_cron_add_line
+                try:
+                    amount_val = int(amount_str)
+                except ValueError:
+                    amount_val = amount_str
+
+                # Create a unique key for matching: (Name, Time, Amount)
+                key = (feeder_name, time_str, amount_val)
+                expiry_lookup[key] = date_str
+
+        # --- PASS 2: Parse Feeding Jobs and Match ---
+        for line in cron_lines:
+            feed_data = parse_cron_add_line(line)
+            if feed_data:
+                feeder_name, time_str, amount, note = feed_data
+
+                # Check if there is an expiry scheduled for this exact job
+                key = (feeder_name, time_str, amount)
+                if key in expiry_lookup:
+                    # Update the note with the expiry date
+                    note = f"Last day: {expiry_lookup[key]}"
+
+                feeding_jobs.append((feeder_name, time_str, amount, note))
+
+        return feeding_jobs
 
     # --- FETCH SYSTEM SCHEDULES ---
     def get_system_schedules() -> list[tuple]:
@@ -453,7 +508,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
         # --- PRINT TABLE ---
         # Define column widths
-        w_name, w_time, w_amount, w_type = 20, 7, 8, 11
+        w_name, w_time, w_amount, w_type = 20, 7, 8, 25
 
         # Print Header
         print("")
@@ -541,7 +596,7 @@ def set_expiry(kill_date: tuple[str], time: str, amount: int | str, feeder_numbe
         return False
 
     # 2. Handle 'auto' amount if passed
-    # TODO: change to real interpretation
+    # TODO: change to real interpretation (currently: errors out). IMPLEMENTATION: consume what came out of ADD step??
     if str(amount).lower() in ["auto", "a"]:
         print("❌ Error: Expiry requires a specific amount (e.g., 1, 2, 5). 'Auto' is ambiguous.")
         return False
@@ -594,7 +649,7 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
             f"❌ No schedule found at {time} for Feeder #{feeder_number}. Cannot remove.")
         return
 
-    # TODO: handle duplicate schedules at same time?
+    # TODO: handle duplicate schedules at same time, one from each source?
 
     """
     Calls the remove_scheduled_feed.sh script to delete a specific cron job.
