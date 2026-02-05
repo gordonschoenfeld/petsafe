@@ -577,6 +577,9 @@ def set_expiry(kill_date: tuple[str], time: str, amount: int | str, feeder_numbe
     target_hour: str = time[:2]
     target_min: str = time[-2:]
 
+    with open("feeders_general_info.json", "r") as f:
+        feeders_list = json.load(f)
+
     # 1. Basic Validation (Optional, but saves a shell call)
     if not (kill_month.isdigit() and kill_day.isdigit()):
         print("❌ Error: Month and Day must be numbers.")
@@ -586,11 +589,9 @@ def set_expiry(kill_date: tuple[str], time: str, amount: int | str, feeder_numbe
         print(f"❌ Error: Invalid date {kill_month}/{kill_day}.")
         return False
 
-    # 2. Handle 'auto' amount if passed
-    # TODO: change to real interpretation (currently: errors out). IMPLEMENTATION: consume what came out of ADD step??
+    # 2. Handle 'auto' amount
     if str(amount).lower() in ["auto", "a"]:
-        print("❌ Error: Expiry requires a specific amount (e.g., 1, 2, 5). 'Auto' is ambiguous.")
-        return False
+        amount = str(feeders_list[str(feeder_number)]["default_amount"])
 
     try:
         # 3. Call the Shell Script
@@ -642,8 +643,6 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
         print(
             f"❌ No schedule found at {time} for Feeder #{feeder_number}. Cannot remove.")
         return
-
-    # TODO: handle duplicate schedules at same time, one from each source?
 
     """
     Calls the remove_scheduled_feed.sh script to delete a specific cron job.
