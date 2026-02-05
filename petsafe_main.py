@@ -326,7 +326,6 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
     clean_date = normalize_date(raw_date_input)
 
     # return valid date
-    print(f"DEBUG | {clean_date=}")
     return clean_date
 
 
@@ -465,8 +464,11 @@ def view_schedule(clean_data: dict) -> list[tuple]:
                 # Check if there is an expiry scheduled for this exact job
                 key = (feeder_name, time_str, amount)
                 if key in expiry_lookup:
+                    # Compute day_of_week
+                    expiry_date = expiry_lookup[key]
+                    expiry_day_of_week = convert_date_to_day(expiry_date)
                     # Update the note with the expiry date
-                    note = f"Last day: {expiry_lookup[key]}"
+                    note = f"Last day: {expiry_day_of_week} {expiry_date}"
 
                 feeding_jobs.append((feeder_name, time_str, amount, note))
 
@@ -508,7 +510,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
         # --- PRINT TABLE ---
         # Define column widths
-        w_name, w_time, w_amount, w_type = 20, 7, 8, 25
+        w_name, w_time, w_amount, w_type = 20, 5, 8, 20
 
         # Print Header
         print("")
