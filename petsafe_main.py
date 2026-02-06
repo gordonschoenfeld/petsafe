@@ -655,13 +655,17 @@ def task_input() -> None:
         # Show new schedules
         clean_data: dict = fetch_feeder_info()
         print(f"Updated schedules:")
-        view_schedule(clean_data)
+        if clean_data:
+            view_schedule(clean_data)
 
     # INPUT: REMOVE ACTION
     elif action in ['remove', 'r', 'rm', 'd', 'del', 'delete']:
         # Print current schedules, for user reference
         print("Current schedules:")
         clean_data: dict = fetch_feeder_info()
+        if not clean_data:
+            return
+
         all_schedules: list[tuple] = view_schedule(clean_data)
 
         # Prompt for machine & time to remove
