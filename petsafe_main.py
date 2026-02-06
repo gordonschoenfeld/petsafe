@@ -274,6 +274,7 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
 
 
 # -- 👀 VIEW SCHEDULE FUNCTION --
+# TODO: instead just call view_schedule.py
 def view_schedule(clean_data: dict) -> list[tuple]:
 
     # --- FETCH CRON SCHEDULES ---
