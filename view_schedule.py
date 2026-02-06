@@ -288,8 +288,10 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             rows = sorted(temp_rows, key=lambda x: x[1])
 
             for row in rows:
+                if row[0] == "***REMOVED***":
+                    row[0] = "***REMOVED***             "
                 print(
-                    f"{row[0]:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
+                    f"{row[0]:>{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
         print("")
 
     # --- PRINT SCHEDULE ---
