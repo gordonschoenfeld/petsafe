@@ -29,6 +29,10 @@ except FileNotFoundError:
 
 
 # --- MAIN LOGIC ---
+with open("feeders_general_info.json", "r") as f:
+    feeders_list = json.load(f)
+
+
 def convert_date_to_day(date_str) -> str:
     # Takes MM/DD as input
 
@@ -256,3 +260,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
     # --- MAIN VIEW SCHEDULE LOGIC ---
     all_schedules = print_all_schedules()
     print(all_schedules)
+
+
+if __name__ == "__main__":
+    view_schedule(clean_data=feeders_list)
