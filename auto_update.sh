@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# ABOUT: This script keeps the server's code up to date.
-# This script runs a `git pull`.
-
-# 1. Go to the project directory
+# 1. Go to the project directory (Corrected Path)
 cd ***REDACTED*** || exit
 
 # 2. Pull the latest changes silently
