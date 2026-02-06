@@ -20,6 +20,7 @@ client = renew_tokens.refresh_disk_tokens()
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 INFO_FILE = os.path.join(SCRIPT_DIR, "feeders_general_info.json")
 
+# --- MAIN LOGIC ---
 try:
     with open(INFO_FILE, "r") as f:
         feeders_list = json.load(f)
@@ -28,9 +29,42 @@ except FileNotFoundError:
     sys.exit(1)
 
 
-# --- MAIN LOGIC ---
-with open("feeders_general_info.json", "r") as f:
-    feeders_list = json.load(f)
+def fetch_feeder_info() -> dict:
+    clean_data: dict = {}
+
+    try:
+        feeders = client.feeders
+        if not feeders:
+            print("No feeders found on this account.")
+            return
+        for feeder in feeders:
+            clean_data[feeder.id] = {}
+            # id: ***REDACTED*** is ***REDACTED***
+            if feeder.id == ***REDACTED***:
+                num = "1"
+            # id: ***REDACTED*** is ***REDACTED***
+            elif feeder.id == ***REDACTED***:
+                num = "2"
+            clean_data[feeder.id]["feeder_number"] = num
+            clean_data[feeder.id]["api_id"] = feeder.data["thing_name"]
+            clean_data[feeder.id]["name"] = feeders_list[num]["name"]
+            clean_data[feeder.id]["default_amount"] = feeders_list[num]["default_amount"]
+            # Display schedules
+            clean_data[feeder.id]["schedules"] = []
+            for schedule in feeder.data["schedules"]:
+                clean_data[feeder.id]["schedules"].append({
+                    "time": schedule["time"],
+                    "amount": schedule["amount"],
+                    "id": schedule["id"]
+                })
+            clean_data[feeder.id]["schedules"].sort(key=lambda x: x['time'])
+            clean_data[feeder.id]["slow_feed"] = False
+        return clean_data
+    except Exception as e:
+        print(f"\nAn error occurred: {e}")
+        # Print traceback only if needed for debugging:
+        # import traceback
+        # traceback.print_exc()
 
 
 def convert_date_to_day(date_str) -> str:
@@ -255,12 +289,11 @@ def view_schedule(clean_data: dict) -> list[tuple]:
                     f"{row[0]:<{w_name}} | {row[1]:<{w_time}} | {row[2]} {row[3]:<{w_amount}} | {row[4]:<{w_type}}")
         print("")
 
-        return all_schedules
-
-    # --- MAIN VIEW SCHEDULE LOGIC ---
+    # --- PRINT SCHEDULE ---
     all_schedules = print_all_schedules()
-    print(all_schedules)
+    return all_schedules
 
 
 if __name__ == "__main__":
-    view_schedule(clean_data=feeders_list)
+    clean_data = fetch_feeder_info()
+    view_schedule(clean_data)
