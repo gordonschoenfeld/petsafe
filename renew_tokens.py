@@ -5,6 +5,47 @@ import petsafe_smartfeed as sf
 import requests
 
 
+# --- 1. DEFINE THE PATCH ---
+def patched_refresh_tokens(self):
+    """
+    Patched method to handle missing RefreshToken in AWS response.
+    """
+    CLIENT_ID = "18hpp04puqmgf5nc6o474lcp2g"
+
+    data = {
+        "ClientId": CLIENT_ID,
+        "AuthFlow": "REFRESH_TOKEN_AUTH",
+        "AuthParameters": {
+            "REFRESH_TOKEN": self.refresh_token
+        },
+    }
+
+    headers = {
+        "Content-Type": "application/x-amz-json-1.1",
+        "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth",
+    }
+
+    response = requests.post(
+        "https://cognito-idp.us-east-1.amazonaws.com/",
+        json=data,
+        headers=headers
+    ).json()
+
+    if "AuthenticationResult" in response:
+        self.id_token = response["AuthenticationResult"]["IdToken"]
+        self.access_token = response["AuthenticationResult"]["AccessToken"]
+        # The critical fix: use .get() to avoid crashing
+        self.refresh_token = response["AuthenticationResult"].get(
+            "RefreshToken", self.refresh_token)
+    else:
+        print(f"Warning: Token refresh attempt failed: {response}")
+
+
+# --- 2. APPLY THE PATCH ---
+sf.PetSafeClient.refresh_tokens = patched_refresh_tokens
+
+
+# --- 3. RENEW TOKENS ON DISK ---
 def patched_refresh_tokens(self):
     """
     Patched method to handle missing RefreshToken in AWS response.
