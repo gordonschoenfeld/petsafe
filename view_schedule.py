@@ -238,6 +238,8 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         system_schedules = []
         for feeder in clean_data.values():
             for schedule in feeder['schedules']:
+                if feeder['name'] == "***REMOVED***":
+                    feeder['name'] = "***REMOVED***      "
                 system_schedules.append(
                     (feeder['name'], schedule['time'], schedule['amount'], "Set in app"))
         return system_schedules
