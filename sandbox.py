@@ -6,7 +6,7 @@ import sys
 if len(sys.argv) > 1:
     amount = int(sys.argv[1])  # Convert string input to integer
 else:
-    amount = 10  # Default fallback
+    amount = 1  # Default fallback
 
 print(f"Feeding {amount} portions...")
 # feed_pet(amount)
