@@ -4,8 +4,7 @@ import sys
 import os
 
 # --- MAGIC IMPORT ---
-# Importing this applies the patch to sf.PetSafeClient automatically
-# and gives us access to the refresh_disk_tokens() function.
+# Importing this applies the patch to sfk_tokens() function.
 import renew_tokens
 
 # --- INITIALIZATION ---
@@ -60,9 +59,7 @@ if __name__ == "__main__":
             sys.exit(1)
 
         # Execute
-        print(f"Requesting '{feeder_name}' to feed {feed_amount_str}...")
         target_feeder.feed(amount=feed_units, slow_feed=False)
-        print("Success.")
 
     except ValueError:
         print("Error: Amount must be an integer.")

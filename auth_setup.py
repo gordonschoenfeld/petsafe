@@ -25,6 +25,3 @@ tokens = {
 
 with open("petsafe_tokens.json", "w") as f:
     json.dump(tokens, f, indent=4)
-
-print("\nSUCCESS! Tokens saved to 'petsafe_tokens.json'.")
-print("You can now run your main script.")
