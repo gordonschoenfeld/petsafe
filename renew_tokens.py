@@ -1,14 +1,22 @@
-#!/usr/bin/python3
-
+#!/usr/bin/env python3
 import json
+import os
 import petsafe_smartfeed as sf
 import requests
+import sys
 
 
-# --- 1. DEFINE THE PATCH ---
+# --- 1. SETUP PATHS ---
+# calculate the absolute path to the folder where this script lives
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+TOKEN_FILE = os.path.join(SCRIPT_DIR, "petsafe_tokens.json")
+
+
+# --- 2. DEFINE THE PATCH ---
 def patched_refresh_tokens(self):
     """
     Patched method to handle missing RefreshToken in AWS response.
+    Global fix for all scripts that import this module.
     """
     CLIENT_ID = "18hpp04puqmgf5nc6o474lcp2g"
 
@@ -25,11 +33,15 @@ def patched_refresh_tokens(self):
         "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth",
     }
 
-    response = requests.post(
-        "https://cognito-idp.us-east-1.amazonaws.com/",
-        json=data,
-        headers=headers
-    ).json()
+    try:
+        response = requests.post(
+            "https://cognito-idp.us-east-1.amazonaws.com/",
+            json=data,
+            headers=headers
+        ).json()
+    except Exception as e:
+        print(f"Warning: Connection to AWS failed: {e}")
+        return
 
     if "AuthenticationResult" in response:
         self.id_token = response["AuthenticationResult"]["IdToken"]
@@ -38,68 +50,24 @@ def patched_refresh_tokens(self):
         self.refresh_token = response["AuthenticationResult"].get(
             "RefreshToken", self.refresh_token)
     else:
-        print(f"Warning: Token refresh attempt failed: {response}")
+        print(f"Warning: AWS refused token refresh. Response: {response}")
 
 
-# --- 2. APPLY THE PATCH ---
+# --- 3. APPLY THE PATCH IMMEDIATELY ---
 sf.PetSafeClient.refresh_tokens = patched_refresh_tokens
 
 
-# --- 3. RENEW TOKENS ON DISK ---
-def patched_refresh_tokens(self):
+# --- 4. HELPER FUNCTION ---
+def refresh_disk_tokens():
     """
-    Patched method to handle missing RefreshToken in AWS response.
+    Loads tokens from disk, refreshes them via AWS, and saves them back.
     """
-    # 1. Hardcode the PetSafe Client ID (Public Mobile App ID)
-    CLIENT_ID = "18hpp04puqmgf5nc6o474lcp2g"
-
-    # 2. Construct the payload WITHOUT the Secret Hash
-    # (This client is public, so it doesn't use a client secret)
-    data = {
-        "ClientId": CLIENT_ID,
-        "AuthFlow": "REFRESH_TOKEN_AUTH",
-        "AuthParameters": {
-            "REFRESH_TOKEN": self.refresh_token
-        },
-    }
-
-    headers = {
-        "Content-Type": "application/x-amz-json-1.1",
-        "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth",
-    }
-
-    # 3. Send Request to AWS Cognito
-    response = requests.post(
-        "https://cognito-idp.us-east-1.amazonaws.com/",
-        json=data,
-        headers=headers
-    ).json()
-
-    # 4. Handle Response
-    if "AuthenticationResult" in response:
-        self.id_token = response["AuthenticationResult"]["IdToken"]
-        self.access_token = response["AuthenticationResult"]["AccessToken"]
-
-        # THE FIX: Use .get() so we don't crash if AWS doesn't send a new RefreshToken
-        self.refresh_token = response["AuthenticationResult"].get(
-            "RefreshToken", self.refresh_token)
-    else:
-        # If AWS returns an error, print it clearly
-        print("\n--- AWS COGNITO ERROR ---")
-        print(json.dumps(response, indent=2))
-        raise Exception("Failed to refresh tokens. See AWS error above.")
-
-
-sf.PetSafeClient.refresh_tokens = patched_refresh_tokens
-
-if __name__ == "__main__":
+    # Uses the absolute path defined at the top
     try:
-        # 1. Load the OLD tokens
-        with open("petsafe_tokens.json", "r") as f:
+        with open(TOKEN_FILE, "r") as f:
             tokens = json.load(f)
 
-        # 2. Instantiate the client
-        # This triggers the internal validation, which calls our PATCHED refresh_tokens()
+        # Instantiate client (triggers the patched refresh if needed)
         client = sf.PetSafeClient(
             email=tokens["email"],
             id_token=tokens["id_token"],
@@ -107,7 +75,6 @@ if __name__ == "__main__":
             access_token=tokens["access_token"]
         )
 
-        # 3. If we get here, the patch worked! Save the NEW tokens.
         new_tokens = {
             "email": tokens["email"],
             "id_token": client.id_token,
@@ -115,10 +82,20 @@ if __name__ == "__main__":
             "refresh_token": client.refresh_token
         }
 
-        with open("petsafe_tokens.json", "w") as f:
+        with open(TOKEN_FILE, "w") as f:
             json.dump(new_tokens, f, indent=4)
 
+        return client
+
+    except FileNotFoundError:
+        print(f"Error: {TOKEN_FILE} not found.")
+        print("Please run auth_setup.py (and ensure it saves to the correct folder)!")
+        sys.exit(1)
     except Exception as e:
-        print(f"❌ renew_tokens.py script: Failed to refresh tokens: {e}")
-        # We exit with error so feed_now.py knows something went wrong
-        exit(1)
+        print(f"Error refreshing tokens: {e}")
+        sys.exit(1)
+
+
+# --- 5. EXECUTION BLOCK ---
+if __name__ == "__main__":
+    refresh_disk_tokens()
