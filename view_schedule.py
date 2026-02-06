@@ -238,8 +238,6 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         system_schedules = []
         for feeder in clean_data.values():
             for schedule in feeder['schedules']:
-                if feeder['name'] == "***REDACTED***":
-                    feeder['name'] = "***REDACTED***      "
                 system_schedules.append(
                     (feeder['name'], schedule['time'], schedule['amount'], "Set in app"))
         return system_schedules
@@ -277,7 +275,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         print("")
         # removed amount + 9 for bar
         print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Amt.':<{w_amount}} | {'Note':<{w_type}}")
-        print("-" * (w_name + w_time + w_amount + w_type + 18))
+        print("-" * (w_name + w_time + w_amount + w_type + 9))
 
         if not all_schedules:
             print("No feeder schedules found.")
@@ -289,8 +287,8 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
             for row in rows:
                 if row[0] == "***REDACTED***":
-                    name = "***REDACTED***----------"
-                else:
+                    name = "***REDACTED***           "
+                elif row[0] == "***REDACTED***":
                     name = row[0]
                 print(
                     f"{name:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
@@ -304,3 +302,34 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 if __name__ == "__main__":
     clean_data = fetch_feeder_info()
     view_schedule(clean_data)
+
+
+# TODO: try HTML tables
+'''
+Try making into an HTML table:
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    background-color: #1c1c1e; /* Matches iOS Dark Mode */
+    color: #ffffff;
+    font-family: "Menlo", "Courier New", monospace;
+    font-size: 14px;
+    padding: 15px;
+    margin: 0;
+  }
+  pre {
+    white-space: pre-wrap;       /* Wraps text if it's too wide */
+    word-wrap: break-word;
+  }
+</style>
+</head>
+<body>
+<pre>[YOUR_SCRIPT_OUTPUT]</pre>
+</body>
+</html>
+
+'''
