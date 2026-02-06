@@ -1,7 +1,7 @@
 import json
 import petsafe_smartfeed as sf
 
-# 1. Ask for email
+# 1. Define email
 email: str = "gordon.schoenfeld@gmail.com"
 
 # 2. Initialize client and request a code
