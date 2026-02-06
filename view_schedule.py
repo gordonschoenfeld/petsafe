@@ -273,7 +273,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
         # Print Header
         print("")
-        # removed amount + 3 for bar
+        # removed amount's "+9" for bar
         print(
             f"{'Feeder':<{w_name}} | {'Time':<{w_time}} | {'Amt.':<7} | {'Note':<{w_type}}")
         print("-" * (w_name + w_time + w_amount + w_type + 1))
