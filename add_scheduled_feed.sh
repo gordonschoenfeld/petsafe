@@ -12,7 +12,7 @@ LOG_FILE="/tmp/pet_cron.log"
 # 1. Input Validation
 if [ "$#" -ne 3 ]; then
     echo "Usage: $0 <HH:MM> <feeder_id> <amount>"
-    echo "Example: $0 14:30 1 50"
+    echo "Example: $0 14:30 2 4"
     exit 1
 fi
 
