@@ -255,4 +255,4 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
     # --- MAIN VIEW SCHEDULE LOGIC ---
     all_schedules = print_all_schedules()
-    return all_schedules
+    print(all_schedules)
