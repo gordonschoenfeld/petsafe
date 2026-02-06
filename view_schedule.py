@@ -227,7 +227,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
                     expiry_date = expiry_lookup[key]
                     expiry_day_of_week = convert_date_to_day(expiry_date)
                     # Update the note with the expiry date
-                    note = f"Last day: {expiry_day_of_week} {expiry_date}"
+                    note = f"Ends {expiry_day_of_week} {expiry_date}"
 
                 feeding_jobs.append((feeder_name, time_str, amount, note))
 
@@ -250,30 +250,31 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         cron_schedules: list[tuple] = get_cron_schedules()
         system_schedules: list[tuple] = get_system_schedules()
         all_schedules: list[tuple] = cron_schedules + system_schedules
-        complete_symbol: str = "●"    # alts: █ ● ▰
-        incomplete_symbol: str = "○"  # alts: ░ ○ ▱
+        # complete_symbol: str = "●"    # alts: █ ● ▰
+        # incomplete_symbol: str = "○"  # alts: ░ ○ ▱
 
         # Convert amount from units to cups for display
-        cups_per_unit = {1: "1/8 cup", 2: "1/4 cup", 3: "3/8 cup", 4: "1/2 cup",
-                         5: "5/8 cup", 6: "3/4 cup", 7: "7/8 cup", 8: "1 cup"}
+        cups_per_unit = {1: "⅛ cup", 2: "¼ cup", 3: "⅜ cup", 4: "½ cup",
+                         5: "⅝ cup", 6: "¾ cup", 7: "⅞ cup", 8: "1 cup"}
         for i in range(len(all_schedules)):
             feeder_name, time, amount, source = all_schedules[i]
             if str(amount).isdigit():
                 amount_str: str = cups_per_unit.get(amount, f"{amount}")
-                amount_bar = int(amount) * complete_symbol \
-                    + (8 - int(amount)) * incomplete_symbol
+                # amount_bar = int(amount) * complete_symbol \
+                #     + (8 - int(amount)) * incomplete_symbol
             else:
                 amount_str = "ERROR"
             all_schedules[i] = (
-                feeder_name, time, amount_str, amount_bar, source)
+                feeder_name, time, amount_str, source)       # removed amount_bar
 
         # --- PRINT TABLE ---
         # Define column widths
-        w_name, w_time, w_amount, w_type = 20, 5, 8, 20
+        w_name, w_time, w_amount, w_type = 12, 5, 5, 15
 
         # Print Header
         print("")
-        print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Amount':<{w_amount + 8}} | {'Note':<{w_type}}")
+        # removed amount + 9 for bar
+        print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Amt.':<{w_amount}} | {'Note':<{w_type}}")
         print("-" * (w_name + w_time + w_amount + w_type + 18))
 
         if not all_schedules:
@@ -286,7 +287,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
             for row in rows:
                 print(
-                    f"{row[0]:<{w_name}} | {row[1]:<{w_time}} | {row[2]} {row[3]:<{w_amount}} | {row[4]:<{w_type}}")
+                    f"{row[0]:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
         print("")
 
     # --- PRINT SCHEDULE ---
