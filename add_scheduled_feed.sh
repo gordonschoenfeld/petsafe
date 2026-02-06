@@ -1,8 +1,10 @@
 #!/bin/bash
 
 # --- CONFIGURATION ---
-# Replace this with the absolute path to your Python script
-PYTHON_SCRIPT="/feed_now.py"
+# Get the absolute path of the directory where THIS script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+# Define the Python script location relative to this script
+PYTHON_SCRIPT="$SCRIPT_DIR/feed_now.py"
 # We assume 'python3' is in the path, but using full path is safer
 PYTHON_EXEC="/usr/local/bin/python3"
 # Log file location (Matches what we used in manual debugging)
