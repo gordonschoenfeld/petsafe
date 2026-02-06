@@ -303,34 +303,3 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 if __name__ == "__main__":
     clean_data = fetch_feeder_info()
     view_schedule(clean_data)
-
-
-# TODO: try HTML tables
-'''
-Try making into an HTML table:
-
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body {
-    background-color: #1c1c1e; /* Matches iOS Dark Mode */
-    color: #ffffff;
-    font-family: "Menlo", "Courier New", monospace;
-    font-size: 14px;
-    padding: 15px;
-    margin: 0;
-  }
-  pre {
-    white-space: pre-wrap;       /* Wraps text if it's too wide */
-    word-wrap: break-word;
-  }
-</style>
-</head>
-<body>
-<pre>[YOUR_SCRIPT_OUTPUT]</pre>
-</body>
-</html>
-
-'''
