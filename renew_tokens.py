@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
-import petsafe_smartfeed as sf
 import json
+import petsafe_smartfeed as sf
+import requests
 
 
 def patched_refresh_tokens(self):
