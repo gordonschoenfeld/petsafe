@@ -6,6 +6,7 @@
 import sys
 import json
 import petsafe_smartfeed as sf
+import subprocess
 
 # --- AUTH SETUP ---
 try:
@@ -15,6 +16,10 @@ except FileNotFoundError:
     print("Error: Tokens file not found.")
     exit()
 
+# --- RENEW TOKENS ---
+subprocess.run(["python3", "renew_tokens.py"])
+
+# --- INSTANTIATE CLIENT ---
 client = sf.PetSafeClient(
     email=saved_tokens["email"],
     id_token=saved_tokens["id_token"],
