@@ -27,30 +27,6 @@ client = sf.PetSafeClient(
     access_token=saved_tokens["access_token"]
 )
 
-# --- TOKEN REFRESH LOGIC ---
-print("\n--- FORCING TOKEN REFRESH ---")
-try:
-    # 1. Force the client to get a new token from AWS right now
-    client.refresh_tokens()
-
-    # 2. Update your headers with the NEW token
-    # Note: We strip any whitespace just in case
-    fresh_token = client.id_token.strip()
-
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': fresh_token
-    }
-
-    print("✅ Token Refreshed.")
-    # Debug: Print the last 10 chars to verify it changed
-    print(f"Token ends in: ...{fresh_token[-10:]}")
-except Exception as e:
-    print(f"❌ Refresh Failed: {e}")
-    exit()
-# --- END TOKEN REFRESH LOGIC ---
-
-
 headers = {
     'Content-Type': 'application/json',
     'Authorization': client.id_token
