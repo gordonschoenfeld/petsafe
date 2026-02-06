@@ -269,14 +269,14 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
         # --- PRINT TABLE ---
         # Define column widths
-        w_name, w_time, w_amount, w_type = 12, 5, 5, 15
+        w_name, w_time, w_amount, w_type = 6, 5, 5, 15
 
         # Print Header
         print("")
-        # removed amount + 9 for bar
+        # removed amount + 3 for bar
         print(
-            f"{'Feeder':<16} | {'Time':<{w_time}} | {'Amt.':<7} | {'Note':<{w_type}}")
-        print("-" * (w_name + w_time + w_amount + w_type + 7))
+            f"{'Feeder':<{w_name}} | {'Time':<{w_time}} | {'Amt.':<7} | {'Note':<{w_type}}")
+        print("-" * (w_name + w_time + w_amount + w_type + 1))
 
         if not all_schedules:
             print("No feeder schedules found.")
@@ -288,8 +288,8 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
             for row in rows:
                 if row[0] == "***REDACTED***":
-                    name = "***REDACTED***           "
-                elif row[0] == "***REDACTED***":
+                    name = "***REDACTED***"
+                else:
                     name = row[0]
                 print(
                     f"{name:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
