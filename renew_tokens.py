@@ -50,3 +50,37 @@ def patched_refresh_tokens(self):
 
 
 sf.PetSafeClient.refresh_tokens = patched_refresh_tokens
+
+if __name__ == "__main__":
+    try:
+        # 1. Load the OLD tokens
+        with open("petsafe_tokens.json", "r") as f:
+            tokens = json.load(f)
+
+        # 2. Instantiate the client
+        # This triggers the internal validation, which calls our PATCHED refresh_tokens()
+        print("🔄 specific script: Attempting to refresh tokens...")
+        client = sf.PetSafeClient(
+            email=tokens["email"],
+            id_token=tokens["id_token"],
+            refresh_token=tokens["refresh_token"],
+            access_token=tokens["access_token"]
+        )
+
+        # 3. If we get here, the patch worked! Save the NEW tokens.
+        new_tokens = {
+            "email": tokens["email"],
+            "id_token": client.id_token,
+            "access_token": client.access_token,
+            "refresh_token": client.refresh_token
+        }
+
+        with open("petsafe_tokens.json", "w") as f:
+            json.dump(new_tokens, f, indent=4)
+
+        print("✅ specific script: Tokens refreshed and saved to disk.")
+
+    except Exception as e:
+        print(f"❌ specific script: Failed to refresh tokens: {e}")
+        # We exit with error so feed_now.py knows something went wrong
+        exit(1)
