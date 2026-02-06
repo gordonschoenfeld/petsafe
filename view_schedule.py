@@ -274,7 +274,8 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         # Print Header
         print("")
         # removed amount + 9 for bar
-        print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Amt.':<{w_amount}} | {'Note':<{w_type}}")
+        print(
+            f"{'Feeder Name'} | {'Time':<{w_time}} | {'Amt.':<7} | {'Note':<{w_type}}")
         print("-" * (w_name + w_time + w_amount + w_type + 7))
 
         if not all_schedules:
