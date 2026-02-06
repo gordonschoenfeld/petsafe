@@ -27,7 +27,28 @@ except FileNotFoundError:
     print(f"Error: {INFO_FILE} not found.")
     sys.exit(1)
 
+
 # --- MAIN LOGIC ---
+def convert_date_to_day(date_str) -> str:
+    # Takes MM/DD as input
+
+    # 1. Get the current date (normalized to midnight for accurate comparison)
+    now = datetime.now()
+
+    # 2. Parse the "MM/DD" string using the current year temporarily
+    # We append the current year to make it a valid datetime object
+    dt_object = datetime.strptime(f"{date_str}/{now.year}", "%m/%d/%Y")
+
+    # 3. Check if this date is in the past
+    # (We compare .date() to ignore the specific time of day)
+    if dt_object.date() < now.date():
+        # If it's in the past, add 1 to the year
+        dt_object = dt_object.replace(year=now.year + 1)
+
+    # 4. Get the 3-letter weekday abbreviation based on the correct year
+    day_abbr = dt_object.strftime("%a")
+
+    return day_abbr
 
 
 def view_schedule(clean_data: dict) -> list[tuple]:
