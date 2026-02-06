@@ -3,6 +3,7 @@
 import re
 import sys
 import json
+import renew_tokens               # Keep this here, even if not called.
 import subprocess
 import petsafe_smartfeed as sf
 from datetime import datetime
