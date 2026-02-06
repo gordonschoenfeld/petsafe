@@ -289,7 +289,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
             for row in rows:
                 if row[0] == "***REDACTED***":
-                    name = "***REDACTED***             ."
+                    name = "***REDACTED***----------"
                 else:
                     name = row[0]
                 print(
