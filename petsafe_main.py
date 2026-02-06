@@ -453,11 +453,11 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
         # --- PRINT TABLE ---
         # Define column widths
-        w_name, w_time, w_amount, w_type = 20, 5, 8, 20
+        w_name, w_time, w_amount, w_type = 12, 5, 7, 20
 
         # Print Header
         print("")
-        print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Amount':<{w_amount + 8}} | {'Note':<{w_type}}")
+        print(f"{'Feeder Name':<{w_name}} | {'Time':<{w_time}} | {'Amount':<{w_amount + 9}} | {'Note':<{w_type}}")
         print("-" * (w_name + w_time + w_amount + w_type + 18))
 
         if not all_schedules:
