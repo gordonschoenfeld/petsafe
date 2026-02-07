@@ -502,9 +502,9 @@ def add_schedule(time: str, amount: int | str, feeder_number: int | str) -> None
             check=True            # Raises CalledProcessError if script fails
         )
 
-        # 3. Print the success output from the shell script
-        print("Request placed successfully!")
-        print("Output:\n", result.stdout)
+        # [DISABLED] # 3. Print the success output from the shell script
+        # print("Request placed successfully!")
+        # print("Output:\n", result.stdout)
 
     except subprocess.CalledProcessError as e:
         # 4. Handle errors (e.g., script not found, permission denied)
@@ -561,7 +561,7 @@ def set_expiry(kill_date: tuple[str], time: str, amount: int | str, feeder_numbe
         )
 
         # 4. Success Feedback
-        print(f"Success: {result.stdout.strip()}")
+        # [DISABLED] print(f"Success: {result.stdout.strip()}")
         return True
 
     except subprocess.CalledProcessError as e:
@@ -614,7 +614,7 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
             text=True
         )
 
-        print(f"Success: {result.stdout.strip()}")
+        # [DISABLED] print(f"Success: {result.stdout.strip()}")
         return True
 
     except subprocess.CalledProcessError as e:
