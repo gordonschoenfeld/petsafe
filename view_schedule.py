@@ -128,10 +128,11 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             print("Error: 'crontab' command not found.")
             sys.exit(1)
 
+    # TODO: understand future items
     def parse_cron_add_line(line) -> tuple | None:
         """
         Parses a single cron line to extract hour, minute, feeder, and amount.
-        Assumes format: MIN HOUR * * * cd dir_path && python_path script_path FEEDER_ID AMOUNT >> logfile 2>&1
+        Assumes format for current items: MIN HOUR * * * cd dir_path && python_path script_path FEEDER_ID AMOUNT >> logfile 2>&1
         """
         # The name of the script we are looking for in the cron list
         target_script = "feed_now.py"
@@ -242,7 +243,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
                     expiry_date = expiry_lookup[key]
                     expiry_day_of_week = convert_date_to_day(expiry_date)
                     # Update the note with the expiry date
-                    note = f"End {expiry_day_of_week} {expiry_date}"
+                    note = f"~ {expiry_day_of_week} {expiry_date}"
 
                 feeding_jobs.append((feeder_name, hour, minute, amount, note))
 
