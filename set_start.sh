@@ -15,12 +15,15 @@ TARGET_MIN=$4
 FEEDER_NUM=$5
 AMOUNT=$6
 
-# Strip leading zeros to match crontab format (e.g., "08" -> "8")
+# Strip leading zeros for calculation and cron-standard formatting
+START_MONTH_INT=$((10#$START_MONTH))
+START_DAY_INT=$((10#$START_DAY))
 TARGET_HOUR_INT=$((10#$TARGET_HOUR))
 TARGET_MIN_INT=$((10#$TARGET_MIN))
 
-# This ensures Python can parse it reliably as HHMM
-TAG_TIME=$(printf "%02d%02d" $TARGET_HOUR_INT $TARGET_MIN_INT)
+# Unique tag to identify this specific job for deletion later
+# Format: #START_FEEDER_2_AT_0830_ON_0501
+JOB_TAG="#START_FEEDER_${FEEDER_NUM}_AT_$(printf "%02d%02d" $TARGET_HOUR_INT $TARGET_MIN_INT)_ON_$(printf "%02d%02d" $START_MONTH_INT $START_DAY_INT)"
 
 # --- CHECK FOR COMMANDS ---
 if ! command -v crontab &> /dev/null; then
@@ -28,36 +31,27 @@ if ! command -v crontab &> /dev/null; then
     exit 1
 fi
 
-# --- CONSTRUCT PATTERNS ---
+# --- CONSTRUCT THE COMMANDS ---
 
+# 1. The actual work: Call your add_scheduled_feed script
+DO_WORK="/usr/bin/bash /path/to/add_scheduled_feed.sh $TARGET_HOUR_INT $TARGET_MIN_INT $FEEDER_NUM $AMOUNT"
 
-# --- CHECK FOR EXISTING SCHEDULE ALREADY IN PLACE ---
+# 2. The Self-Destruct: Remove any line containing this unique JOB_TAG from crontab
+SELF_DESTRUCT="crontab -l | grep -v '$JOB_TAG' | crontab -"
 
-
-# --- CHECK FOR EXISTING SCHEDULE PENDING ---
-
-# --- CONSTRUCT THE 'SELF-DESTRUCT' COMMAND ---
-# 1. Read crontab
-# 2. Write back to crontab
-# 3. Kill this command itself
-
+# 3. Combine them: Do work, then immediately delete self
+FULL_CMD="{ $DO_WORK; $SELF_DESTRUCT; }"
 
 # --- SCHEDULE THE JOB ---
-# Cron format: 59 23 Day Month * Command
-CRON_SCHEDULE="00 00 $START_DAY $START_MONTH *"
+# Cron format: Min Hour Day Month Weekday
+CRON_SCHEDULE="00 00 $START_DAY_INT $START_MONTH_INT *"
 
-# Combine into the final line
-NEW_JOB="$CRON_SCHEDULE $KILLER_CMD $START_TAG"
+# Combine schedule, command, and the comment tag
+NEW_JOB="$CRON_SCHEDULE $FULL_CMD $JOB_TAG"
 
-# Write to Crontab
-if (crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -; then
-    :
-    # Commenting out success messages. Above colon is needed to "do nothing"
-    # echo "✅ Success! Scheduled start."
-    # echo "   Start Date:  $START_MONTH/$START_DAY at 23:59"
-    # echo "   Time:        $TARGET_HOUR:$TARGET_MIN"
-    # echo "   Feeder:      $FEEDER_NUM"
-    # echo "   Amount:      $AMOUNT unit(s)"
+# --- WRITE TO CRONTAB ---
+if (crontab -l 2>/dev/null | grep -v "$JOB_TAG"; echo "$NEW_JOB") | crontab -; then
+    : 
 else
     echo "❌ Error: Failed to update crontab."
     exit 1
