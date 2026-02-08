@@ -253,7 +253,7 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
         print("Exiting program.")
         exit()
     # allow none
-    if raw_date_input.strip().lower() in ['never', 'none', 'no', 'n']:
+    if raw_date_input.strip().lower() in ['never', 'none', 'no', 'n', '']:
         return None
 
     # 1. VALIDATE the raw string (e.g., "8/9")
@@ -504,13 +504,14 @@ def task_input() -> None:
         feeder_number = get_feeder_number_flex()
         amount = get_amount()
         start_date = get_date("start")
-        expiry_date = get_date("last")
+        expiry_date = get_date("final")
 
-        if feeder_number == "all":
-            add_schedule(hour, minute, amount, 1)
-            add_schedule(hour, minute, amount, 2)
-        else:
-            add_schedule(hour, minute, amount, feeder_number)
+        if not start_date:
+            if feeder_number == "all":
+                add_schedule(hour, minute, amount, 1)
+                add_schedule(hour, minute, amount, 2)
+            else:
+                add_schedule(hour, minute, amount, feeder_number)
 
         # if start date supplied, trigger set_start
         if start_date:
@@ -523,6 +524,7 @@ def task_input() -> None:
         # if expiry date supplied, trigger set_expiry
         if expiry_date:
             # validate that range isn't inverted
+            # TODO: fix bugs in error case
             if start_date:
                 date_diff = compute_date_diff(start_date, expiry_date)
                 if date_diff < 0:
