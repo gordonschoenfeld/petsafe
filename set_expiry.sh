@@ -34,29 +34,21 @@ fi
 # Logic: Anchored to start of line (^)
 # Matches: Minute -> Space -> Hour -> Space -> (Wildcards) -> feed_now.py -> ID -> Amount
 # Note: [ \t]+ matches both tabs and spaces.
-FEED_PATTERN="^$TARGET_MIN_INT[ \t]+$TARGET_HOUR_INT[ \t]+.*feed_now.py $FEEDER_NUM $AMOUNT"
 
-# 2. The Expiry Tag
-# This prevents conflicts if you schedule different expiries for 8:00 vs 18:00 on the same day.
-EXPIRY_TAG="# EXPIRY_AUTO_REMOVE_F${FEEDER_NUM}_A${AMOUNT}_T${TAG_TIME}"
-
-# --- CHECK FOR EXISTING EXPIRY ---
+# --- CHECK FOR EXISTING SCHEDULE ALREADY IN PLACE ---
 if crontab -l 2>/dev/null | grep -Fq "$EXPIRY_TAG"; then
     echo "⚠️  An expiry job for this specific time/feeder/amount is already scheduled."
     echo "   Tag: $EXPIRY_TAG"
     exit 1
 fi
 
+# --- CHECK FOR EXISTING SCHEDULE TO BE ADDED ---
+
 # --- CONSTRUCT THE 'SELF-DESTRUCT' COMMAND ---
 # 1. Read crontab
 # 2. Grep -v -E (Kill Extended Regex) -> Kills the specific feeding time
 # 3. Grep -v -F (Kill Fixed String)   -> Kills this specific expiry job
 # 4. Write back to crontab
-# The random number is generated NOW and hardcoded into the job, to avoid collisions
-# We use Python to sleep for a random float between 0 and 20 seconds.
-# This prevents race conditions by spreading execution across millions of possible start times.
-RANDOM_SLEEP="import time,random; time.sleep(random.random() * 20)"
-KILLER_CMD="/usr/local/bin/python3 -c '$RANDOM_SLEEP' && crontab -l | grep -E -v '$FEED_PATTERN' | grep -F -v '$EXPIRY_TAG' | crontab -"
 
 # --- SCHEDULE THE JOB ---
 # Cron format: 59 23 Day Month * Command
