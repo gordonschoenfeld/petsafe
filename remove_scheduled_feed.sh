@@ -1,34 +1,60 @@
 #!/bin/bash
 
-# Check if both arguments are provided
+# --- ARGUMENT CHECK ---
 if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <feeder_num> <hour> <minute>"
-    echo "Example: $0 1 10 00"
+    echo "Usage: $0 <FEEDER_NUM> <HOUR> <MINUTE>"
+    echo "Example: $0 1 08 30"
     exit 1
 fi
 
-FEEDER_ID=$1
-TIME_VAL=$2
+FEEDER_NUM=$1
+TARGET_HOUR=$2
+TARGET_MIN=$3
 
-# 1. Convert to Integers (removes leading zeros, e.g., 08 -> 8)
-# We use 10# to force base-10 so bash doesn't think "08" is octal
-H=$((10#$HOUR))
-M=$((10#$MINUTE))
+# --- 1. NORMALIZE INPUTS (Strip Zeros for Math) ---
+# We force base-10 to prevent octal errors (e.g. 08 -> error)
+HOUR_INT=$((10#$TARGET_HOUR))
+MIN_INT=$((10#$TARGET_MIN))
 
-# 2. Construct the Regex Pattern
-# Format: ^Minute Hour * * * ... feed_now.py FeederID
-# We accept any amount argument that follows the FeederID
-SEARCH_PATTERN="^${M} ${H} \* \* \* .*feed_now.py ${FEEDER_ID} "
+# --- 2. BUILD ROBUST REGEX ---
+# Logic: "0?X" means "match X, optionally preceded by 0"
+# This successfully matches both "8" and "08"
+if [ "$HOUR_INT" -lt 10 ]; then
+    HOUR_REGEX="0?$HOUR_INT"
+else
+    HOUR_REGEX="$HOUR_INT"
+fi
 
-# 3. Check if the job exists
-if ! crontab -l 2>/dev/null | grep -q "$SEARCH_PATTERN"; then
-    echo "Error: No schedule found for Feeder ${FEEDER_ID} at ${H}:${M}."
-    echo "Debug: Searched for pattern: '$SEARCH_PATTERN'"
+if [ "$MIN_INT" -lt 10 ]; then
+    MIN_REGEX="0?$MIN_INT"
+else
+    MIN_REGEX="$MIN_INT"
+fi
+
+# The pattern we search for in crontab:
+# Example: ^0?0 0?1 .*feed_now.py 1 
+SEARCH_PATTERN="^$MIN_REGEX $HOUR_REGEX .*feed_now.py $FEEDER_NUM "
+
+# --- 3. CHECK IF JOB EXISTS ---
+# FIX: Added -E so grep understands that '?' is a special character
+if ! crontab -l | grep -Eq "$SEARCH_PATTERN"; then
+    echo "Error: No schedule found for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
+    # echo "Debug: Searched for regex: '$SEARCH_PATTERN'"
     exit 1
 fi
 
-# 4. Remove the job
-# grep -v keeps everything that does NOT match the pattern
-(crontab -l 2>/dev/null | grep -v "$SEARCH_PATTERN") | crontab -
+# --- 4. REMOVE THE JOB ---
+# FIX: Added -E so it correctly identifies the line to delete
+TMP_CRON=$(mktemp)
+crontab -l | grep -Ev "$SEARCH_PATTERN" > "$TMP_CRON"
 
-echo "Removed schedule for Feeder ${FEEDER_ID} at ${TIME_VAL}."
+# Install the new crontab
+if crontab "$TMP_CRON"; then
+    rm "$TMP_CRON"
+    # Silent success is usually preferred for scripts, but you can uncomment below to see it:
+    # echo "✅ Success! Removed schedule for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
+else
+    rm "$TMP_CRON"
+    echo "❌ Error: Failed to write new crontab."
+    exit 1
+fi
