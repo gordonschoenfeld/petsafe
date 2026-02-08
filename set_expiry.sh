@@ -37,7 +37,6 @@ fi
 FEED_PATTERN="^$TARGET_MIN_INT[ \t]+$TARGET_HOUR_INT[ \t]+.*feed_now.py $FEEDER_NUM $AMOUNT"
 
 # 2. The Expiry Tag
-# Updated to include TIME in the tag name. 
 # This prevents conflicts if you schedule different expiries for 8:00 vs 18:00 on the same day.
 EXPIRY_TAG="# EXPIRY_AUTO_REMOVE_F${FEEDER_NUM}_A${AMOUNT}_T${TAG_TIME}"
 
@@ -48,12 +47,12 @@ if crontab -l 2>/dev/null | grep -Fq "$EXPIRY_TAG"; then
     exit 1
 fi
 
-# --- CONSTRUCT THE 'EXPIRE' COMMAND ---
+# --- CONSTRUCT THE 'SELF-DESTRUCT' COMMAND ---
 # 1. Read crontab
-# 2. Grep -v -E (Remove Extended Regex) -> Removes the specific feeding time
-# 3. Grep -v -F (Remove Fixed String)   -> Removes this specific expiry job
+# 2. Grep -v -E (Kill Extended Regex) -> Kills the specific feeding time
+# 3. Grep -v -F (Kill Fixed String)   -> Kills this specific expiry job
 # 4. Write back to crontab
-# Bug fix: The random number is generated NOW and hardcoded into the job, to avoid collisions
+# The random number is generated NOW and hardcoded into the job, to avoid collisions
 # We use Python to sleep for a random float between 0 and 20 seconds.
 # This prevents race conditions by spreading execution across millions of possible start times.
 RANDOM_SLEEP="import time,random; time.sleep(random.random() * 20)"
