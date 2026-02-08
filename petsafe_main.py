@@ -276,21 +276,31 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
     return clean_date
 
 
-def compute_date_diff(date1: str, date2: str) -> int:
+def compute_date_diff(date1: tuple | str, date2: tuple | str) -> int | None:
+    # 1. Convert Tuple inputs ('MM', 'DD') to String "MM/DD". subprocess.run cannot handle tuples directly.
+    if isinstance(date1, tuple):
+        date1 = f"{date1[0]}/{date1[1]}"
+
+    if isinstance(date2, tuple):
+        date2 = f"{date2[0]}/{date2[1]}"
+
     try:
+        # 2. Run the external script
         result = subprocess.run(
-            ['python', 'compute_date_diff.py', date1, date2],
-            capture_output=True,  # Captures stdout and stderr
-            text=True,            # Decodes bytes to string
-            check=True            # Raises CalledProcessError if script fails
+            ['python3', 'compute_date_diff.py', date1, date2],  # Ensure python3
+            capture_output=True,
+            text=True,
+            check=True
         )
 
-        # Return the output (stripped of trailing newlines)
-        return result.stdout.strip()
+        # 3. Return the result as an integer
+        return int(result.stdout.strip())
 
     except subprocess.CalledProcessError as e:
-        # Handle cases where the external script crashes or returns an error code
         print(f"Error executing script: {e.stderr}")
+        return None
+    except ValueError:
+        print(f"Error: Script returned non-integer: {result.stdout}")
         return None
 
 
