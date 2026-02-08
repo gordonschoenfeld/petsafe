@@ -12,18 +12,16 @@ LOG_FILE="/tmp/pet_cron.log"
 # ---------------------
 
 # 1. Input Validation
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <HH:MM> <feeder_id> <amount>"
-    echo "Example: $0 14:30 2 4"
+if [ "$#" -ne 4 ]; then
+    echo "Usage: $0 <target_hour> <target_min> <feeder_id> <amount>"
+    echo "Example: $0 14 30 2 4"
     exit 1
 fi
 
-TIME_INPUT=$1
-FEEDER_NUM=$2
-AMOUNT=$3
-
-# 2. Parse Time (HH:MM)
-IFS=':' read -r HOUR MINUTE <<< "$TIME_INPUT"
+HOUR=$1
+MINUTE=$2
+FEEDER_NUM=$3
+AMOUNT=$4
 
 # Validate time (Force decimal interpretation with 10# to handle leading zeros)
 if ! [[ "$HOUR" =~ ^[0-9]+$ ]] || ! [[ "$MINUTE" =~ ^[0-9]+$ ]] || \
