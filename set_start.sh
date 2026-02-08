@@ -4,7 +4,7 @@
 if [ "$#" -ne 6 ]; then
     echo "Usage: $0 <start_month> <start_day> <target_hour> <target_min> <feeder_num> <amount>"
     echo "Example: $0 05 01 08 30 2 4"
-    echo "  (On May 1st, create the job scheduled for 08:30, Feeder 2, Amount 4)"
+    echo "  (On May 1st (effective 00:00), set a job scheduled for 08:30, Feeder 2, Amount 4)"
     exit 1
 fi
 
@@ -30,55 +30,34 @@ fi
 
 # --- CONSTRUCT PATTERNS ---
 
-# TODO: 🌟🌟🌟🌟🌟 update this pattern to START 🌟🌟🌟🌟🌟
-# 1. The Feeding Pattern to start (Regex)
-# Logic: Anchored to start of line (^)
-# Matches: Minute -> Space -> Hour -> Space -> (Wildcards) -> feed_now.py -> ID -> Amount
-# Note: [ \t]+ matches both tabs and spaces.
-FEED_PATTERN="^$TARGET_MIN_INT[ \t]+$TARGET_HOUR_INT[ \t]+.*feed_now.py $FEEDER_NUM $AMOUNT"
 
-# TODO: 🌟🌟🌟🌟🌟 update this pattern to START 🌟🌟🌟🌟🌟
-# 2. The Start Tag
-# Updated to include TIME in the tag name. 
-# This prevents conflicts if you schedule different starts for 8:00 vs 18:00 on the same day.
-START_TAG="# START_AUTO_ADD_F${FEEDER_NUM}_A${AMOUNT}_T${TAG_TIME}"
+# --- CHECK FOR EXISTING SCHEDULE ALREADY IN PLACE ---
 
-# TODO: 🌟🌟🌟🌟🌟 update this pattern to START 🌟🌟🌟🌟🌟
-# --- CHECK FOR EXISTING START ---
-if crontab -l 2>/dev/null | grep -Fq "$START_TAG"; then
-    echo "⚠️  An start job for this specific time/feeder/amount is already scheduled."
-    echo "   Tag: $START_TAG"
-    exit 1
-fi
 
-# TODO: add check for *scheduled* adds
+# --- CHECK FOR EXISTING SCHEDULE PENDING ---
 
-# --- CONSTRUCT THE 'START' COMMAND ---
-# TODO: 🌟🌟🌟🌟🌟 update this pattern to START 🌟🌟🌟🌟🌟
+# --- CONSTRUCT THE 'SELF-DESTRUCT' COMMAND ---
 # 1. Read crontab
-# 2. Grep -v -E (Add Extended Regex) -> Adds the specific feeding time
-# 3. Grep -v -F (Add Fixed String)   -> Adds this specific add job
-# 4. Write back to crontab
-RANDOM_SLEEP="import time,random; time.sleep(random.random() * 20)"
-START_CMD="/usr/local/bin/python3 -c '$RANDOM_SLEEP' && crontab -l | grep -E -v '$FEED_PATTERN' | grep -F -v '$START_TAG' | crontab -"
+# 2. Write back to crontab
+# 3. Kill this command itself
+
 
 # --- SCHEDULE THE JOB ---
-# Cron format: 00 00 Day Month * Command
+# Cron format: 59 23 Day Month * Command
 CRON_SCHEDULE="00 00 $START_DAY $START_MONTH *"
 
-# TODO: 🌟🌟🌟🌟🌟 update this pattern to START 🌟🌟🌟🌟🌟
 # Combine into the final line
-NEW_JOB="$CRON_SCHEDULE $START_CMD $START_TAG"
+NEW_JOB="$CRON_SCHEDULE $KILLER_CMD $START_TAG"
 
 # Write to Crontab
 if (crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -; then
     :
     # Commenting out success messages. Above colon is needed to "do nothing"
     # echo "✅ Success! Scheduled start."
-    # echo "   Start Date: $START_MONTH/$START_DAY at 00:00"
-    # echo "   Time:       $TARGET_HOUR:$TARGET_MIN"
-    # echo "   Feeder:     $FEEDER_NUM"
-    # echo "   Amount:     $AMOUNT unit(s)"
+    # echo "   Start Date:  $START_MONTH/$START_DAY at 23:59"
+    # echo "   Time:        $TARGET_HOUR:$TARGET_MIN"
+    # echo "   Feeder:      $FEEDER_NUM"
+    # echo "   Amount:      $AMOUNT unit(s)"
 else
     echo "❌ Error: Failed to update crontab."
     exit 1
