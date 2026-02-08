@@ -36,7 +36,8 @@ def fetch_feeder_info() -> dict:
         feeders = client.feeders
         if not feeders:
             print("No feeders found on this account.")
-            return
+            return {}  # Return empty dict instead of None to prevent crashes
+
         for feeder in feeders:
             clean_data[feeder.id] = {}
             # id: ***REDACTED*** is ***REDACTED***
@@ -45,26 +46,40 @@ def fetch_feeder_info() -> dict:
             # id: ***REDACTED*** is ***REDACTED***
             elif feeder.id == ***REDACTED***:
                 num = "2"
+            else:
+                num = str(feeder.id)  # Fallback if ID is unknown
+
             clean_data[feeder.id]["feeder_number"] = num
-            clean_data[feeder.id]["api_id"] = feeder.data["thing_name"]
-            clean_data[feeder.id]["name"] = feeders_list[num]["name"]
-            clean_data[feeder.id]["default_amount"] = feeders_list[num]["default_amount"]
+            # Use .get() safely in case 'thing_name' is missing
+            clean_data[feeder.id]["api_id"] = feeder.data.get(
+                "thing_name", "Unknown")
+
+            # Use safe lookups for feeders_list
+            if num in feeders_list:
+                clean_data[feeder.id]["name"] = feeders_list[num]["name"]
+                clean_data[feeder.id]["default_amount"] = feeders_list[num]["default_amount"]
+            else:
+                clean_data[feeder.id]["name"] = f"Feeder {num}"
+                clean_data[feeder.id]["default_amount"] = 1
+
             # Display schedules
             clean_data[feeder.id]["schedules"] = []
             for schedule in feeder.data["schedules"]:
                 clean_data[feeder.id]["schedules"].append({
-                    "time": schedule["time"],
+                    "time": schedule["time"],       # <--- FIX: Use "time"
                     "amount": schedule["amount"],
                     "id": schedule["id"]
                 })
+
+            # Now this sort will work because "time" exists
             clean_data[feeder.id]["schedules"].sort(key=lambda x: x['time'])
             clean_data[feeder.id]["slow_feed"] = False
+
         return clean_data
+
     except Exception as e:
-        print(f"\nAn error occurred: {e}")
-        # Print traceback only if needed for debugging:
-        # import traceback
-        # traceback.print_exc()
+        print(f"\nAn error occurred in fetch_feeder_info: {e}")
+        return {}  # Return empty dict on error so we don't crash later
 
 
 def convert_date_to_day(date_str) -> str:
@@ -115,7 +130,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
     def parse_cron_add_line(line) -> tuple | None:
         """
-        Parses a single cron line to extract time, feeder, and amount.
+        Parses a single cron line to extract hour, minute, feeder, and amount.
         Assumes format: MIN HOUR * * * cd dir_path && python_path script_path FEEDER_ID AMOUNT >> logfile 2>&1
         """
         # The name of the script we are looking for in the cron list
@@ -129,7 +144,6 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         # 2. Extract Time (First two standard fields)
         minute = parts[0].zfill(2)
         hour = parts[1].zfill(2)
-        time_str = f"{hour}:{minute}"
 
         # 3. Extract Arguments Dynamically
         # We find the index of 'feed_now.py' and look at the neighbors (index+1, index+2)
@@ -158,7 +172,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         except (FileNotFoundError, json.JSONDecodeError):
             feeder_name = f"Feeder #{feeder_id}"
 
-        return feeder_name, time_str, amount, ""
+        return feeder_name, hour, minute, amount, ""
 
     def parse_cron_expiry_line(line) -> tuple | None:
         log_line = line
@@ -188,10 +202,11 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             date = f"{data['month']}/{data['day']}"
 
             # Convert 1030 to 10:30
-            time_str = f"{data['time'][:2]}:{data['time'][2:]}"
+            hour = data['time'][:2]
+            minute = data['time'][2:]
             amount = data['amount']
 
-            return date, feeder_name, time_str, amount
+            return date, feeder_name, hour, minute, amount
 
     def get_cron_schedules() -> list[tuple]:
         cron_lines = get_cron_lines()
@@ -202,7 +217,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         for line in cron_lines:
             expiry_data = parse_cron_expiry_line(line)
             if expiry_data:
-                date_str, feeder_name, time_str, amount_str = expiry_data
+                date_str, feeder_name, hour, minute, amount_str = expiry_data
 
                 # Convert amount to int to ensure it matches the integer from parse_cron_add_line
                 try:
@@ -210,18 +225,18 @@ def view_schedule(clean_data: dict) -> list[tuple]:
                 except ValueError:
                     amount_val = amount_str
 
-                # Create a unique key for matching: (Name, Time, Amount)
-                key = (feeder_name, time_str, amount_val)
+                # Create a unique key for matching: (Name, Hour, Minute, Amount)
+                key = (feeder_name, hour, minute, amount_val)
                 expiry_lookup[key] = date_str
 
         # --- PASS 2: Parse Feeding Jobs and Match ---
         for line in cron_lines:
             feed_data = parse_cron_add_line(line)
             if feed_data:
-                feeder_name, time_str, amount, note = feed_data
+                feeder_name, hour, minute, amount, note = feed_data
 
                 # Check if there is an expiry scheduled for this exact job
-                key = (feeder_name, time_str, amount)
+                key = (feeder_name, hour, minute, amount)
                 if key in expiry_lookup:
                     # Compute day_of_week
                     expiry_date = expiry_lookup[key]
@@ -229,7 +244,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
                     # Update the note with the expiry date
                     note = f"Ends {expiry_day_of_week} {expiry_date}"
 
-                feeding_jobs.append((feeder_name, time_str, amount, note))
+                feeding_jobs.append((feeder_name, hour, minute, amount, note))
 
         return feeding_jobs
 
@@ -238,52 +253,67 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         system_schedules = []
         for feeder in clean_data.values():
             for schedule in feeder['schedules']:
+                # FIX: Split "HH:MM" so we have separate Hour/Minute
+                time_str = schedule.get('time', "00:00")
+                if ":" in time_str:
+                    hour, minute = time_str.split(":")
+                else:
+                    hour, minute = "00", "00"
+
+                # RETURN 5 ITEMS: (Name, Hour, Minute, Amount, Source)
                 system_schedules.append(
-                    (feeder['name'], schedule['time'], schedule['amount'], "Set in app"))
+                    (feeder['name'], hour, minute,
+                     schedule['amount'], "Set in app")
+                )
         return system_schedules
 
     # --- PRINT ALL SCHEDULES ---
     def print_all_schedules() -> list[tuple]:
-        # NOTE Schedule format: (feeder_name: str, time: str, amount: str, source: str)
-
-        # Get lists from both sources and combine both lists
+        # Get lists from both sources (Both now have 5 items)
         cron_schedules: list[tuple] = get_cron_schedules()
         system_schedules: list[tuple] = get_system_schedules()
         all_schedules: list[tuple] = cron_schedules + system_schedules
-        # complete_symbol: str = "●"    # alts: █ ● ▰
-        # incomplete_symbol: str = "○"  # alts: ░ ○ ▱
 
-        # Convert amount from units to cups for display
         cups_per_unit = {1: "⅛ cup", 2: "¼ cup", 3: "⅜ cup", 4: "½ cup",
                          5: "⅝ cup", 6: "¾ cup", 7: "⅞ cup", 8: "1 cup"}
-        for i in range(len(all_schedules)):
-            feeder_name, time, amount, source = all_schedules[i]
+
+        # We create a NEW list for the final formatted output
+        formatted_schedules = []
+
+        for item in all_schedules:
+            # UNPACK 5 ITEMS
+            feeder_name, hour, minute, amount, source = item
+
+            # Format Amount
             if str(amount).isdigit():
-                amount_str: str = cups_per_unit.get(amount, f"{amount}")
-                # amount_bar = int(amount) * complete_symbol \
-                #     + (8 - int(amount)) * incomplete_symbol
+                amount_str: str = cups_per_unit.get(int(amount), f"{amount}")
             else:
                 amount_str = "ERROR"
-            all_schedules[i] = (
-                feeder_name, time, amount_str, source)       # removed amount_bar
 
-        # --- PRINT TABLE ---
-        # Define column widths
-        w_name, w_time, w_amount, w_type = 6, 5, 5, 15
+            # Combine Time for Display (and for petsafe_main compatibility)
+            time_str = f"{hour}:{minute}"
+
+            # Create 4-item tuple for the Table & Main Script
+            formatted_schedules.append(
+                (feeder_name, time_str, amount_str, source))
+
+        # Update the main list to use the formatted version
+        all_schedules = formatted_schedules
 
         # Print Header
+        w_name, w_time, w_amount, w_type = 6, 5, 5, 15
         print("")
-        # removed amount's "+9" for bar
         print(
             f"{'Feeder':<{w_name}} | {'Time':<{w_time}} | {'Amt.':<{w_amount}} | {'Note':<{w_type}}")
         print("-" * (w_name + w_time + w_amount + w_type + 1))
 
         if not all_schedules:
             print("No feeder schedules found.")
+            print("")
+            return []
         else:
-            # Sort by Time asc, and secondarily by feeder name desc
-            temp_rows = sorted(all_schedules,
-                               key=lambda x: x[0], reverse=True)
+            # Sort by Time (index 1 is now "HH:MM")
+            temp_rows = sorted(all_schedules, key=lambda x: x[0], reverse=True)
             rows = sorted(temp_rows, key=lambda x: x[1])
 
             for row in rows:
@@ -293,7 +323,9 @@ def view_schedule(clean_data: dict) -> list[tuple]:
                     name = row[0]
                 print(
                     f"{name:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
-        print("")
+            print("")
+
+            return rows
 
     # --- PRINT SCHEDULE ---
     all_schedules = print_all_schedules()
