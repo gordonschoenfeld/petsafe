@@ -118,87 +118,84 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             )
 
             if result.returncode != 0:
-                # If no crontab exists, return empty list
                 return []
 
-            # Split into lines and remove empty ones
             return [line for line in result.stdout.splitlines() if line.strip()]
 
         except FileNotFoundError:
             print("Error: 'crontab' command not found.")
             sys.exit(1)
 
-    # TODO: understand future items
     def parse_cron_add_line(line) -> tuple | None:
-        """
-        Parses a single cron line to extract hour, minute, feeder, and amount.
-        Assumes format for current items: MIN HOUR * * * cd dir_path && python_path script_path FEEDER_ID AMOUNT >> logfile 2>&1
-        """
-        # The name of the script we are looking for in the cron list
+        # Parse active feed_now.py lines
         target_script = "feed_now.py"
         parts = line.split()
 
-        # 1. Basic check
         if len(parts) < 6 or target_script not in line:
             return None
 
-        # 2. Extract Time (First two standard fields)
         minute = parts[0].zfill(2)
         hour = parts[1].zfill(2)
 
-        # 3. Extract Arguments Dynamically
-        # We find the index of 'feed_now.py' and look at the neighbors (index+1, index+2)
         try:
             script_idx = parts.index(target_script)
-
-            # Arg 1 (Feeder ID) is right after the script name
             feeder_id = parts[script_idx + 1]
-
-            # Arg 2 (Amount) is right after Feeder ID
             amount = int(parts[script_idx + 2])
-
         except (ValueError, IndexError):
-            # ValueError: target_script not in list (though we checked string earlier)
-            # IndexError: Line ends too early (missing arguments)
             return None
 
-        # 4. Lookup friendly name
-        # Ensure this path is correct relative to where you run this viewing script!
-        try:
-            with open("feeders_general_info.json", "r") as f:
-                feeders_list = json.load(f)
-                # Assuming feeders_list is a Dict where keys are strings
-                feeder_info = feeders_list.get(str(feeder_id), {})
-                feeder_name = feeder_info.get("name", f"Feeder #{feeder_id}")
-        except (FileNotFoundError, json.JSONDecodeError):
-            feeder_name = f"Feeder #{feeder_id}"
+        # Resolve Name
+        feeder_info = feeders_list.get(str(feeder_id), {})
+        feeder_name = feeder_info.get("name", f"Feeder #{feeder_id}")
 
         return feeder_name, hour, minute, amount, ""
 
-    def parse_cron_expiry_line(line) -> tuple | None:
-        log_line = line
+    def parse_cron_start_line(line) -> tuple | None:
+        """
+        Parses future start jobs (add_scheduled_feed.sh).
+        Ex: ... add_scheduled_feed.sh <HOUR> <MIN> <FEEDER> <AMOUNT> ...
+        """
+        if "add_scheduled_feed.sh" not in line:
+            return None
 
-        # Define the pattern with named groups for easy extraction
+        # Regex to capture arguments: Hour, Min, Feeder, Amount
+        # Handles full paths like /bin/bash ... /add_scheduled_feed.sh 10 01 1 2
+        pattern = re.compile(
+            r"add_scheduled_feed\.sh\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)")
+        match = pattern.search(line)
+
+        if not match:
+            return None
+
+        hour_arg, min_arg, feeder_arg, amount_arg = match.groups()
+
+        # Parse Start Date from the cron fields (Min Hour Day Month ...)
+        # We grab fields index 2 (Day) and 3 (Month)
+        parts = line.split()
+        if len(parts) < 5:
+            return None
+
+        start_day = parts[2]
+        start_month = parts[3]
+        start_date_str = f"{start_month.zfill(2)}/{start_day.zfill(2)}"
+
+        # Resolve Name
+        feeder_info = feeders_list.get(str(feeder_arg), {})
+        feeder_name = feeder_info.get("name", f"Feeder #{feeder_arg}")
+
+        return feeder_name, hour_arg.zfill(2), min_arg.zfill(2), int(amount_arg), start_date_str
+
+    def parse_cron_expiry_line(line) -> tuple | None:
+        # Define the pattern with named groups
         pattern = re.compile(
             r"^59 23 (?P<day>\d+) (?P<month>\d+) \* .*? # EXPIRY_AUTO_REMOVE_F(?P<feeder>\d+)_A(?P<amount>[^_]+)_T(?P<time>\d{4})$")
 
-        match = pattern.search(log_line)
-
+        match = pattern.search(line)
         if match:
             data = match.groupdict()
-
-            try:
-                with open("feeders_general_info.json", "r") as f:
-                    feeders_list = json.load(f)
-
-                # Assemble output vars
-                feeder_num: str = str(data['feeder'])
-                # Use .get to avoid crashes if JSON is out of sync
-                feeder_info = feeders_list.get(feeder_num, {})
-                feeder_name: str = feeder_info.get(
-                    'name', f"Feeder #{feeder_num}")
-            except (FileNotFoundError, json.JSONDecodeError):
-                feeder_name = f"Feeder #{data['feeder']}"
+            feeder_num: str = str(data['feeder'])
+            feeder_info = feeders_list.get(feeder_num, {})
+            feeder_name: str = feeder_info.get('name', f"Feeder #{feeder_num}")
 
             date = f"{data['month']}/{data['day']}"
 
@@ -208,6 +205,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             amount = data['amount']
 
             return date, feeder_name, hour, minute, amount
+        return None
 
     def get_cron_schedules() -> list[tuple]:
         cron_lines = get_cron_lines()
@@ -219,18 +217,16 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             expiry_data = parse_cron_expiry_line(line)
             if expiry_data:
                 date_str, feeder_name, hour, minute, amount_str = expiry_data
-
-                # Convert amount to int to ensure it matches the integer from parse_cron_add_line
                 try:
                     amount_val = int(amount_str)
                 except ValueError:
                     amount_val = amount_str
 
-                # Create a unique key for matching: (Name, Hour, Minute, Amount)
+                # Key: (Name, Hour, Minute, Amount)
                 key = (feeder_name, hour, minute, amount_val)
                 expiry_lookup[key] = date_str
 
-        # --- PASS 2: Parse Feeding Jobs and Match ---
+        # --- PASS 2: Active Feeding Jobs ---
         for line in cron_lines:
             feed_data = parse_cron_add_line(line)
             if feed_data:
@@ -238,12 +234,31 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
                 # Check if there is an expiry scheduled for this exact job
                 key = (feeder_name, hour, minute, amount)
+
                 if key in expiry_lookup:
                     # Compute day_of_week
                     expiry_date = expiry_lookup[key]
                     expiry_day_of_week = convert_date_to_day(expiry_date)
-                    # Update the note with the expiry date
                     note = f"~ {expiry_day_of_week} {expiry_date}"
+
+                feeding_jobs.append((feeder_name, hour, minute, amount, note))
+
+        # --- PASS 3: Future Start Jobs (NEW) ---
+        for line in cron_lines:
+            start_data = parse_cron_start_line(line)
+            if start_data:
+                feeder_name, hour, minute, amount, start_date = start_data
+                key = (feeder_name, hour, minute, amount)
+
+                # Check for Expiry
+                if key in expiry_lookup:
+                    expiry_date = expiry_lookup[key]
+                    # Format: 02/10 - 02/15
+                    note = f"{start_date} ~ {expiry_date}"
+                else:
+                    # Format: Mon 02/10 ~
+                    start_weekday = convert_date_to_day(start_date)
+                    note = f"{start_weekday} {start_date} ~"
 
                 feeding_jobs.append((feeder_name, hour, minute, amount, note))
 
@@ -254,14 +269,12 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         system_schedules = []
         for feeder in clean_data.values():
             for schedule in feeder['schedules']:
-                # FIX: Split "HH:MM" so we have separate Hour/Minute
                 time_str = schedule.get('time', "00:00")
                 if ":" in time_str:
                     hour, minute = time_str.split(":")
                 else:
                     hour, minute = "00", "00"
 
-                # RETURN 5 ITEMS: (Name, Hour, Minute, Amount, Source)
                 system_schedules.append(
                     (feeder['name'], hour, minute,
                      schedule['amount'], "Set in app")
@@ -270,35 +283,29 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
     # --- PRINT ALL SCHEDULES ---
     def print_all_schedules() -> list[tuple]:
-        # Get lists from both sources (Both now have 5 items)
-        cron_schedules: list[tuple] = get_cron_schedules()
-        system_schedules: list[tuple] = get_system_schedules()
-        all_schedules: list[tuple] = cron_schedules + system_schedules
+        cron_schedules = get_cron_schedules()
+        system_schedules = get_system_schedules()
+        all_schedules = cron_schedules + system_schedules
 
         cups_per_unit = {1: "⅛ cup", 2: "¼ cup", 3: "⅜ cup", 4: "½ cup",
                          5: "⅝ cup", 6: "¾ cup", 7: "⅞ cup", 8: "1 cup"}
 
-        # We create a NEW list for the final formatted output
         formatted_schedules = []
 
         for item in all_schedules:
-            # UNPACK 5 ITEMS
             feeder_name, hour, minute, amount, source = item
 
-            # Format Amount
             if str(amount).isdigit():
                 amount_str: str = cups_per_unit.get(int(amount), f"{amount}")
             else:
                 amount_str = "ERROR"
 
-            # Combine Time for Display (and for petsafe_main compatibility)
             time_str = f"{hour}:{minute}"
 
-            # Create 4-item tuple for the Table & Main Script
+            # Create 4-item tuple for output
             formatted_schedules.append(
                 (feeder_name, time_str, amount_str, source))
 
-        # Update the main list to use the formatted version
         all_schedules = formatted_schedules
 
         # Print Header
@@ -313,7 +320,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             print("")
             return []
         else:
-            # Sort by Time (index 1 is now "HH:MM")
+            # Sort by Time
             temp_rows = sorted(all_schedules, key=lambda x: x[0], reverse=True)
             rows = sorted(temp_rows, key=lambda x: x[1])
 
@@ -329,8 +336,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             return rows
 
     # --- PRINT SCHEDULE ---
-    all_schedules = print_all_schedules()
-    return all_schedules
+    return print_all_schedules()
 
 
 if __name__ == "__main__":
