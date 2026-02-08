@@ -106,8 +106,9 @@ def get_time() -> str:
         return get_time()  # Retry
     # return valid time
     else:
-        time = f"{time[:2]}:{time[-2:]}"
-        return time
+        hour = f"{time[:2]}"
+        minute = f"{time[-2:]}"
+        return hour, minute
 
 
 def get_feeder_number_flex() -> int | str:
@@ -297,7 +298,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
 
 # -- ➕ ADD SCHEDULE FUNCTION --
-def add_schedule(time: str, amount: int | str, feeder_number: int | str) -> None:
+def add_schedule(hour: str, minute: str, amount: int | str, feeder_number: int | str) -> None:
     amount: str = str(amount)
     feeder_number: str = str(feeder_number)
     script_path: str = "./add_scheduled_feed.sh"
@@ -310,7 +311,7 @@ def add_schedule(time: str, amount: int | str, feeder_number: int | str) -> None
         # 2. Call the script with the arguments
         # The arguments are passed as a list: [Script, Arg1, Arg2, Arg3]
         result = subprocess.run(
-            [script_path, time, feeder_number, amount],
+            [script_path, minute, hour, feeder_number, amount],
             capture_output=True,  # Captures stdout and stderr
             text=True,            # Returns output as string instead of bytes
             check=True            # Raises CalledProcessError if script fails
@@ -449,8 +450,10 @@ def set_expiry(expiry_date: tuple[str], time: str, amount: int | str, feeder_num
 
 
 # -- 🗑️ REMOVE SCHEDULE FUNCTION --
-def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> None:
-    # NOTE Schedule format: (feeder_name: str, time: str, amount: str, source: str)
+def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> None:
+    # NOTE Schedule format: (feeder_name: str, hour: str, minute: str, amount: str, source: str)
+
+    time = hour + ":" + minute
 
     # Validation
     feeder_id: int = get_id_by_number(clean_data, feeder_number)
@@ -481,7 +484,8 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
         # We use check=True so that if the bash script exits with 1,
         # it raises a CalledProcessError automatically.
         result = subprocess.run(
-            ["./remove_scheduled_feed.sh", str(feeder_number), str(time)],
+            ["./remove_scheduled_feed.sh",
+                str(feeder_number), str(hour), str(minute)],
             check=True,
             capture_output=True,
             text=True
@@ -508,25 +512,25 @@ def task_input() -> None:
 
     # INPUT: ADD ACTION
     if action in ['add', 'a']:
-        time = get_time()
+        hour, minute = get_time()
         feeder_number = get_feeder_number_flex()
         amount = get_amount()
         start_date = get_date("start")
         expiry_date = get_date("last")
 
         if feeder_number == "all":
-            add_schedule(time, amount, 1)
-            add_schedule(time, amount, 2)
+            add_schedule(hour, minute, amount, 1)
+            add_schedule(hour, minute, amount, 2)
         else:
-            add_schedule(time, amount, feeder_number)
+            add_schedule(hour, minute, amount, feeder_number)
 
         # if start date supplied, trigger set_start
         if start_date:
             if feeder_number == "all":
-                set_start(start_date, time, amount, 1)
-                set_start(start_date, time, amount, 2)
+                set_start(start_date, hour, minute, amount, 1)
+                set_start(start_date, hour, minute, amount, 2)
             else:
-                set_start(start_date, time, amount, feeder_number)
+                set_start(start_date, hour, minute, amount, feeder_number)
 
         # if expiry date supplied, trigger set_expiry
         if expiry_date:
@@ -553,15 +557,16 @@ def task_input() -> None:
         all_schedules: list[tuple] = view_schedule(clean_data)
 
         # Prompt for machine & time to remove
-        time = get_time()
+        hour, minute = get_time()
         feeder_number = get_feeder_number_flex()
 
         # Call remove function. Validation is handled inside function.
         if feeder_number == "all":
-            remove_schedule(time, 1, clean_data, all_schedules)
-            remove_schedule(time, 2, clean_data, all_schedules)
+            remove_schedule(hour, minute, 1, clean_data, all_schedules)
+            remove_schedule(hour, minute, 2, clean_data, all_schedules)
         else:
-            remove_schedule(time, feeder_number, clean_data, all_schedules)
+            remove_schedule(hour, minute, feeder_number,
+                            clean_data, all_schedules)
 
         # Show new schedules
         print(f"Updated schedules:")
@@ -583,7 +588,7 @@ def task_input() -> None:
 
 
 # --- 🏡 MAIN FUNCTION ---
-def main():
+def main() -> None:
     # 1. Print timestamp immediately
     print("================================")
     print("⭐️ RUN TIME:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))

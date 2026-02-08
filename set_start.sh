@@ -15,14 +15,17 @@ TARGET_MIN=$4
 FEEDER_NUM=$5
 AMOUNT=$6
 
-# Strip leading zeros for calculation and cron-standard formatting
+# Strip leading zeros
 START_MONTH_INT=$((10#$START_MONTH))
 START_DAY_INT=$((10#$START_DAY))
 TARGET_HOUR_INT=$((10#$TARGET_HOUR))
 TARGET_MIN_INT=$((10#$TARGET_MIN))
 
-# Unique tag to identify this specific job for deletion later
-# Format: #START_FEEDER_2_AT_0830_ON_0501
+# --- FIX 1: GET ABSOLUTE PATH ---
+# This finds the directory where THIS script is saved, no matter where you run it from.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Unique tag
 JOB_TAG="#START_FEEDER_${FEEDER_NUM}_AT_$(printf "%02d%02d" $TARGET_HOUR_INT $TARGET_MIN_INT)_ON_$(printf "%02d%02d" $START_MONTH_INT $START_DAY_INT)"
 
 # --- CHECK FOR COMMANDS ---
@@ -33,25 +36,28 @@ fi
 
 # --- CONSTRUCT THE COMMANDS ---
 
-# 1. The actual work: Call add_scheduled_feed.sh script
-DO_WORK="/bin/bash ./add_scheduled_feed.sh $TARGET_HOUR_INT:$TARGET_MIN_INT $FEEDER_NUM $AMOUNT"
+# --- FIX 2: USE ABSOLUTE PATH & CHECK ARGS ---
+# We use $SCRIPT_DIR to ensure cron finds the file.
+# NOTE: I changed "$TARGET_HOUR_INT:$TARGET_MIN_INT" back to two separate arguments 
+# because standard bash scripts usually expect separate args ($1, $2). 
+# If your add_scheduled_feed.sh explicitly expects "HH:MM", change this back to a colon.
+DO_WORK="/bin/bash $SCRIPT_DIR/add_scheduled_feed.sh $TARGET_HOUR_INT $TARGET_MIN_INT $FEEDER_NUM $AMOUNT"
 
-# 2. The Self-Destruct: Remove any line containing this unique JOB_TAG from crontab
+# The Self-Destruct
+# We redirect output to /dev/null to keep cron silent on success
 SELF_DESTRUCT="crontab -l | grep -v '$JOB_TAG' | crontab -"
 
-# 3. Combine them: Do work, then immediately delete self
-FULL_CMD="{ $DO_WORK; $SELF_DESTRUCT; }"
+# Combine them
+FULL_CMD="{ $DO_WORK; $SELF_DESTRUCT; } >/dev/null 2>&1"
 
 # --- SCHEDULE THE JOB ---
-# Cron format: Min Hour Day Month Weekday
 CRON_SCHEDULE="0 0 $START_DAY_INT $START_MONTH_INT *"
 
-# Combine schedule, command, and the comment tag
 NEW_JOB="$CRON_SCHEDULE $FULL_CMD $JOB_TAG"
 
 # --- WRITE TO CRONTAB ---
 if (crontab -l 2>/dev/null | grep -v "$JOB_TAG"; echo "$NEW_JOB") | crontab -; then
-    : 
+    echo "✅ Success! Scheduled start for $START_MONTH/$START_DAY."
 else
     echo "❌ Error: Failed to update crontab."
     exit 1
