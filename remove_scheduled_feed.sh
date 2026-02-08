@@ -2,7 +2,7 @@
 
 # Check if both arguments are provided
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <feeder_id> <time>"
+    echo "Usage: $0 <feeder_num> <time>"
     echo "Example: $0 1 10:00"
     exit 1
 fi
