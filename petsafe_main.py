@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import re
-import sys
 import json
 import renew_tokens               # Keep this here, even if not called.
 import subprocess
