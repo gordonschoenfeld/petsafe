@@ -522,6 +522,14 @@ def task_input() -> None:
         start_date = get_date("start")
         expiry_date = get_date("final")
 
+        # validate that range isn't inverted
+        if start_date and expiry_date:
+            date_diff = compute_date_diff(start_date, expiry_date)
+            if date_diff < 0:
+                print(f"Error: start date is after end date.")
+                task_input()
+                return
+
         if not start_date:
             if feeder_number == "all":
                 add_schedule(hour, minute, amount, 1)
@@ -539,14 +547,6 @@ def task_input() -> None:
 
         # if expiry date supplied, trigger set_expiry
         if expiry_date:
-            # validate that range isn't inverted
-            # TODO: fix bugs in error case
-            if start_date:
-                date_diff = compute_date_diff(start_date, expiry_date)
-                if date_diff < 0:
-                    print(f"Error: start date is after end date.")
-                    task_input()
-                    return
 
             if feeder_number == "all":
                 set_expiry(expiry_date, hour, minute, amount, 1)
