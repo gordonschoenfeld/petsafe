@@ -76,9 +76,6 @@ def fetch_feeder_info() -> dict:
         return clean_data
     except Exception as e:
         print(f"\nAn error occurred: {e}")
-        # Print traceback only if needed for debugging:
-        # import traceback
-        # traceback.print_exc()
 
 
 # --- TRANSLATE FEEDER NUMBER INTO ID ---
@@ -311,7 +308,7 @@ def add_schedule(hour: str, minute: str, amount: int | str, feeder_number: int |
         # 2. Call the script with the arguments
         # The arguments are passed as a list: [Script, Arg1, Arg2, Arg3]
         result = subprocess.run(
-            [script_path, minute, hour, feeder_number, amount],
+            [script_path, hour, minute, feeder_number, amount],
             capture_output=True,  # Captures stdout and stderr
             text=True,            # Returns output as string instead of bytes
             check=True            # Raises CalledProcessError if script fails
@@ -332,26 +329,21 @@ def add_schedule(hour: str, minute: str, amount: int | str, feeder_number: int |
 
 
 # -- 🌞 SET START FUNCTION --
-def set_start(start_date: tuple[str], time: str, amount: int | str, feeder_number: int) -> bool:
+def set_start(start_date: tuple[str], hour: str, minute: str, amount: int | str, feeder_number: int) -> bool:
     """
-    Calls set_start.sh to schedule a self-destructing cron job that adds a scheduled feed.
-
-    Args:
-        month (str): Month as "MM" or "M" (e.g., "02" or "2").
-        day (str): Day as "DD" or "D" (e.g., "15" or "5").
-        feeder_number (int): 1 or 2.
-        amount (int | str): The amount to start feeding (e.g., 5 or "default").
+    Calls set_start.sh to schedule a self-destructing cron job.
     """
     script_path = "./set_start.sh"
 
     start_month, start_day = start_date
-    target_hour: str = time[:2]
-    target_min: str = time[-2:]
+    # Variables are already separate now, no need to slice a time string
+    target_hour = hour
+    target_min = minute
 
     with open("feeders_general_info.json", "r") as f:
         feeders_list = json.load(f)
 
-    # 1. Basic Validation (Optional, but saves a shell call)
+    # 1. Basic Validation
     if not (start_month.isdigit() and start_day.isdigit()):
         print("❌ Error: Month and Day must be numbers.")
         return False
@@ -366,7 +358,6 @@ def set_start(start_date: tuple[str], time: str, amount: int | str, feeder_numbe
 
     try:
         # 3. Call the Shell Script
-        # Arguments: ./set_start.sh <start_month> <start_day> <target_hour> <target_min> <feeder_num> <amount>
         result = subprocess.run(
             [script_path, str(start_month), str(start_day), str(target_hour), str(target_min), str(
                 feeder_number), str(amount)],
@@ -374,43 +365,33 @@ def set_start(start_date: tuple[str], time: str, amount: int | str, feeder_numbe
             text=True,
             check=True
         )
-
-        # 4. Success Feedback
-        # [DISABLED] print(f"Success: {result.stdout.strip()}")
         return True
 
     except subprocess.CalledProcessError as e:
-        # 5. Error Feedback
-        print(f"Failed to set expiry: {e.stderr.strip() or e.stdout.strip()}")
+        print(f"Failed to set start: {e.stderr.strip() or e.stdout.strip()}")
         return False
 
     except FileNotFoundError:
-        print(
-            f"Error: '{script_path}' not found. Make sure it exists and is executable.")
+        print(f"Error: '{script_path}' not found.")
         return False
 
 
 # -- 🌙 SET EXPIRY FUNCTION --
-def set_expiry(expiry_date: tuple[str], time: str, amount: int | str, feeder_number: int) -> bool:
+def set_expiry(expiry_date: tuple[str], hour: str, minute: str, amount: int | str, feeder_number: int) -> bool:
     """
-    Calls set_expiry.sh to schedule a self-destructing cron job that removes a scheduled feed.
-
-    Args:
-        month (str): Month as "MM" or "M" (e.g., "02" or "2").
-        day (str): Day as "DD" or "D" (e.g., "15" or "5").
-        feeder_number (int): 1 or 2.
-        amount (int | str): The amount to stop feeding (e.g., 5 or "default").
+    Calls set_expiry.sh to schedule a self-destructing cron job.
     """
     script_path = "./set_expiry.sh"
 
     expiry_month, expiry_day = expiry_date
-    target_hour: str = time[:2]
-    target_min: str = time[-2:]
+    # Variables are already separate now
+    target_hour = hour
+    target_min = minute
 
     with open("feeders_general_info.json", "r") as f:
         feeders_list = json.load(f)
 
-    # 1. Basic Validation (Optional, but saves a shell call)
+    # 1. Basic Validation
     if not (expiry_month.isdigit() and expiry_day.isdigit()):
         print("❌ Error: Month and Day must be numbers.")
         return False
@@ -425,7 +406,6 @@ def set_expiry(expiry_date: tuple[str], time: str, amount: int | str, feeder_num
 
     try:
         # 3. Call the Shell Script
-        # Arguments: ./set_expiry.sh <expiry_month> <expiry_day> <target_hour> <target_min> <feeder_num> <amount>
         result = subprocess.run(
             [script_path, str(expiry_month), str(expiry_day), str(target_hour), str(target_min), str(
                 feeder_number), str(amount)],
@@ -433,56 +413,64 @@ def set_expiry(expiry_date: tuple[str], time: str, amount: int | str, feeder_num
             text=True,
             check=True
         )
-
-        # 4. Success Feedback
-        # [DISABLED] print(f"Success: {result.stdout.strip()}")
         return True
 
     except subprocess.CalledProcessError as e:
-        # 5. Error Feedback
         print(f"Failed to set expiry: {e.stderr.strip() or e.stdout.strip()}")
         return False
 
     except FileNotFoundError:
-        print(
-            f"Error: '{script_path}' not found. Make sure it exists and is executable.")
+        print(f"Error: '{script_path}' not found.")
         return False
 
 
 # -- 🗑️ REMOVE SCHEDULE FUNCTION --
 def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> None:
-    # NOTE Schedule format: (feeder_name: str, hour: str, minute: str, amount: str, source: str)
+    # NOTE Schedule format: (feeder_name: str, time: str, amount: str, source: str)
 
-    time = hour + ":" + minute
+    # 1. Resolve Feeder ID and Name
+    feeder_id = get_id_by_number(clean_data, feeder_number)
+    if not feeder_id:
+        print(f"❌ Error: Feeder number {feeder_number} not found.")
+        return
 
-    # Validation
-    feeder_id: int = get_id_by_number(clean_data, feeder_number)
+    target_feeder_name = clean_data[feeder_id]['name']
 
-    matching_result = [item for item in all_schedules if item[0] == clean_data[feeder_id]['name'] and item[1]
-                       == time]
+    # 2. Construct the time string matches the format in all_schedules ("HH:MM")
+    target_time = f"{hour}:{minute}"
+
+    # 3. Find matches
+    # We filter the list where Name matches AND Time matches
+    matching_result = [
+        item for item in all_schedules
+        if item[0] == target_feeder_name and item[1] == target_time
+    ]
+
+    # 4. Check source (App vs Local)
+    # Index [3] corresponds to the "Note/Source" column
     matching_result_app = [
-        item for item in matching_result if item[4] == "Set in app"]
-    matching_result_nonapp = [
-        item for item in matching_result if item[4] != "Set in app"]
+        item for item in matching_result if item[3] == "Set in app"]
 
+    matching_result_nonapp = [
+        item for item in matching_result if item[3] != "Set in app"]
+
+    # 5. Handle "Set in App" restriction
+    # If we found it in the App but NOT locally, we can't delete it.
     if matching_result_app and not matching_result_nonapp:
         print(
-            f"❌ Cannot remove schedule at {time} for Feeder #{feeder_number}.")
-        print(f"Please remove it via the PetSafe SmartFeed app 📲.")
+            f"❌ Cannot remove schedule at {target_time} for Feeder #{feeder_number}.")
+        print(f"   (This schedule is managed by the PetSafe Cloud/App)")
         return
 
+    # 6. Handle "No Schedule Found"
     if not matching_result:
         print(
-            f"❌ No schedule found at {time} for Feeder #{feeder_number}. Cannot remove.")
+            f"❌ No schedule found at {target_time} for Feeder #{feeder_number}.")
         return
 
-    """
-    Calls the remove_scheduled_feed.sh script to delete a specific cron job.
-    Returns True if successful, False if the job wasn't found or an error occurred.
-    """
+    # 7. Execute Removal
     try:
-        # We use check=True so that if the bash script exits with 1,
-        # it raises a CalledProcessError automatically.
+        # Note: We pass hour and minute separately because your script likely expects $1 and $2
         result = subprocess.run(
             ["./remove_scheduled_feed.sh",
                 str(feeder_number), str(hour), str(minute)],
@@ -490,18 +478,16 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
             capture_output=True,
             text=True
         )
-
-        # [DISABLED] print(f"Success: {result.stdout.strip()}")
+        print(f"✅ Successfully removed schedule for {target_time}.")
         return True
 
     except subprocess.CalledProcessError as e:
-        # This block catches the 'exit 1' from your bash script
         print(
             f"Failed to remove schedule: {e.stderr.strip() or e.stdout.strip()}")
         return False
 
     except FileNotFoundError:
-        print("Error: remove_scheduled_feed.sh not found. Check the file path.")
+        print("Error: remove_scheduled_feed.sh not found.")
         return False
 
 
