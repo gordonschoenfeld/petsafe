@@ -2,14 +2,14 @@
 
 # --- ARGUMENT PARSING ---
 if [ "$#" -ne 6 ]; then
-    echo "Usage: $0 <kill_month> <kill_day> <target_hour> <target_min> <feeder_num> <amount>"
+    echo "Usage: $0 <expiry_month> <expiry_day> <target_hour> <target_min> <feeder_num> <amount>"
     echo "Example: $0 05 01 08 30 2 4"
     echo "  (On May 1st, delete the job scheduled for 08:30, Feeder 2, Amount 4)"
     exit 1
 fi
 
-KILL_MONTH=$1
-KILL_DAY=$2
+EXPIRY_MONTH=$1
+EXPIRY_DAY=$2
 TARGET_HOUR=$3
 TARGET_MIN=$4
 FEEDER_NUM=$5
@@ -30,7 +30,7 @@ fi
 
 # --- CONSTRUCT PATTERNS ---
 
-# 1. The Feeding Pattern to kill (Regex)
+# 1. The Feeding Pattern to expiry (Regex)
 # Logic: Anchored to start of line (^)
 # Matches: Minute -> Space -> Hour -> Space -> (Wildcards) -> feed_now.py -> ID -> Amount
 # Note: [ \t]+ matches both tabs and spaces.
@@ -48,7 +48,7 @@ if crontab -l 2>/dev/null | grep -Fq "$EXPIRY_TAG"; then
     exit 1
 fi
 
-# --- CONSTRUCT THE 'KILLER' COMMAND ---
+# --- CONSTRUCT THE 'EXPIRE' COMMAND ---
 # 1. Read crontab
 # 2. Grep -v -E (Remove Extended Regex) -> Removes the specific feeding time
 # 3. Grep -v -F (Remove Fixed String)   -> Removes this specific expiry job
@@ -61,7 +61,7 @@ KILLER_CMD="/usr/local/bin/python3 -c '$RANDOM_SLEEP' && crontab -l | grep -E -v
 
 # --- SCHEDULE THE JOB ---
 # Cron format: 59 23 Day Month * Command
-CRON_SCHEDULE="59 23 $KILL_DAY $KILL_MONTH *"
+CRON_SCHEDULE="59 23 $EXPIRY_DAY $EXPIRY_MONTH *"
 
 # Combine into the final line
 NEW_JOB="$CRON_SCHEDULE $KILLER_CMD $EXPIRY_TAG"
@@ -71,10 +71,10 @@ if (crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -; then
     :
     # Commenting out success messages. Above colon is needed to "do nothing"
     # echo "✅ Success! Scheduled expiration ☠️."
-    # echo "   Kill Date: $KILL_MONTH/$KILL_DAY at 23:59"
-    # echo "   Time:      $TARGET_HOUR:$TARGET_MIN"
-    # echo "   Feeder:    $FEEDER_NUM"
-    # echo "   Amount:    $AMOUNT unit(s)"
+    # echo "   Expiry Date: $EXPIRY_MONTH/$EXPIRY_DAY at 23:59"
+    # echo "   Time:        $TARGET_HOUR:$TARGET_MIN"
+    # echo "   Feeder:      $FEEDER_NUM"
+    # echo "   Amount:      $AMOUNT unit(s)"
 else
     echo "❌ Error: Failed to update crontab."
     exit 1
