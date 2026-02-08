@@ -535,10 +535,10 @@ def task_input() -> None:
         # if expiry date supplied, trigger set_expiry
         if expiry_date:
             if feeder_number == "all":
-                set_expiry(expiry_date, time, amount, 1)
-                set_expiry(expiry_date, time, amount, 2)
+                set_expiry(expiry_date, hour, minute, amount, 1)
+                set_expiry(expiry_date, hour, minute, amount, 2)
             else:
-                set_expiry(expiry_date, time, amount, feeder_number)
+                set_expiry(expiry_date, hour, minute, amount, feeder_number)
 
         # Show new schedules
         clean_data: dict = fetch_feeder_info()
