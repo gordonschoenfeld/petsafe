@@ -272,6 +272,24 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
     return clean_date
 
 
+def compute_date_diff(date1: str, date2: str) -> int:
+    try:
+        result = subprocess.run(
+            ['python', 'compute_date_diff.py', date1, date2],
+            capture_output=True,  # Captures stdout and stderr
+            text=True,            # Decodes bytes to string
+            check=True            # Raises CalledProcessError if script fails
+        )
+
+        # Return the output (stripped of trailing newlines)
+        return result.stdout.strip()
+
+    except subprocess.CalledProcessError as e:
+        # Handle cases where the external script crashes or returns an error code
+        print(f"Error executing script: {e.stderr}")
+        return None
+
+
 # -- 👀 VIEW SCHEDULE FUNCTION --
 def view_schedule(clean_data: dict) -> list[tuple]:
     from view_schedule import view_schedule
@@ -312,10 +330,69 @@ def add_schedule(time: str, amount: int | str, feeder_number: int | str) -> None
         print(f"Error: could not find the script at: {script_path}")
 
 
-# -- ☠️ SET EXPIRY FUNCTION --
-def set_expiry(kill_date: tuple[str], time: str, amount: int | str, feeder_number: int) -> bool:
+# -- 🌞 SET START FUNCTION --
+def set_start(start_date: tuple[str], time: str, amount: int | str, feeder_number: int) -> bool:
     """
-    Calls set_expiry.sh to schedule a self-destructing cron job.
+    Calls set_start.sh to schedule a self-destructing cron job that adds a scheduled feed.
+
+    Args:
+        month (str): Month as "MM" or "M" (e.g., "02" or "2").
+        day (str): Day as "DD" or "D" (e.g., "15" or "5").
+        feeder_number (int): 1 or 2.
+        amount (int | str): The amount to start feeding (e.g., 5 or "default").
+    """
+    script_path = "./set_start.sh"
+
+    start_month, start_day = start_date
+    target_hour: str = time[:2]
+    target_min: str = time[-2:]
+
+    with open("feeders_general_info.json", "r") as f:
+        feeders_list = json.load(f)
+
+    # 1. Basic Validation (Optional, but saves a shell call)
+    if not (start_month.isdigit() and start_day.isdigit()):
+        print("❌ Error: Month and Day must be numbers.")
+        return False
+
+    if not (1 <= int(start_month) <= 12) or not (1 <= int(start_day) <= 31):
+        print(f"❌ Error: Invalid date {start_month}/{start_day}.")
+        return False
+
+    # 2. Handle 'default' amount
+    if str(amount).lower() == 'default':
+        amount = str(feeders_list[str(feeder_number)]["default_amount"])
+
+    try:
+        # 3. Call the Shell Script
+        # Arguments: ./set_start.sh <start_month> <start_day> <target_hour> <target_min> <feeder_num> <amount>
+        result = subprocess.run(
+            [script_path, str(start_month), str(start_day), str(target_hour), str(target_min), str(
+                feeder_number), str(amount)],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        # 4. Success Feedback
+        # [DISABLED] print(f"Success: {result.stdout.strip()}")
+        return True
+
+    except subprocess.CalledProcessError as e:
+        # 5. Error Feedback
+        print(f"Failed to set expiry: {e.stderr.strip() or e.stdout.strip()}")
+        return False
+
+    except FileNotFoundError:
+        print(
+            f"Error: '{script_path}' not found. Make sure it exists and is executable.")
+        return False
+
+
+# -- 🌙 SET EXPIRY FUNCTION --
+def set_expiry(expiry_date: tuple[str], time: str, amount: int | str, feeder_number: int) -> bool:
+    """
+    Calls set_expiry.sh to schedule a self-destructing cron job that removes a scheduled feed.
 
     Args:
         month (str): Month as "MM" or "M" (e.g., "02" or "2").
@@ -325,7 +402,7 @@ def set_expiry(kill_date: tuple[str], time: str, amount: int | str, feeder_numbe
     """
     script_path = "./set_expiry.sh"
 
-    kill_month, kill_day = kill_date
+    expiry_month, expiry_day = expiry_date
     target_hour: str = time[:2]
     target_min: str = time[-2:]
 
@@ -333,23 +410,23 @@ def set_expiry(kill_date: tuple[str], time: str, amount: int | str, feeder_numbe
         feeders_list = json.load(f)
 
     # 1. Basic Validation (Optional, but saves a shell call)
-    if not (kill_month.isdigit() and kill_day.isdigit()):
+    if not (expiry_month.isdigit() and expiry_day.isdigit()):
         print("❌ Error: Month and Day must be numbers.")
         return False
 
-    if not (1 <= int(kill_month) <= 12) or not (1 <= int(kill_day) <= 31):
-        print(f"❌ Error: Invalid date {kill_month}/{kill_day}.")
+    if not (1 <= int(expiry_month) <= 12) or not (1 <= int(expiry_day) <= 31):
+        print(f"❌ Error: Invalid date {expiry_month}/{expiry_day}.")
         return False
 
     # 2. Handle 'default' amount
-    if str(amount).lower() in ['default', 'd', 'auto', 'a']:
+    if str(amount).lower() == 'default':
         amount = str(feeders_list[str(feeder_number)]["default_amount"])
 
     try:
         # 3. Call the Shell Script
-        # Arguments: ./set_expiry.sh <kill_month> <kill_day> <target_hour> <target_min> <feeder_num> <amount>
+        # Arguments: ./set_expiry.sh <expiry_month> <expiry_day> <target_hour> <target_min> <feeder_num> <amount>
         result = subprocess.run(
-            [script_path, str(kill_month), str(kill_day), str(target_hour), str(target_min), str(
+            [script_path, str(expiry_month), str(expiry_day), str(target_hour), str(target_min), str(
                 feeder_number), str(amount)],
             capture_output=True,
             text=True,
@@ -424,7 +501,7 @@ def remove_schedule(time: str, feeder_number: int, clean_data: dict, all_schedul
         return False
 
 
-# --- 🌳 MAIN INPUT TREE FUNCTION ---
+# --- 🌳 MAIN INPUT TREE ---
 def task_input() -> None:
     action = input(
         "Select action: Add (A), Remove (R), View (V), Exit (X): ").strip().lower()
@@ -434,7 +511,8 @@ def task_input() -> None:
         time = get_time()
         feeder_number = get_feeder_number_flex()
         amount = get_amount()
-        kill_date = get_date("expiration")
+        start_date = get_date("start")
+        expiry_date = get_date("last")
 
         if feeder_number == "all":
             add_schedule(time, amount, 1)
@@ -442,13 +520,21 @@ def task_input() -> None:
         else:
             add_schedule(time, amount, feeder_number)
 
-        # if kill date supplied, trigger set_expiry
-        if kill_date:
+        # if start date supplied, trigger set_start
+        if start_date:
             if feeder_number == "all":
-                set_expiry(kill_date, time, amount, 1)
-                set_expiry(kill_date, time, amount, 2)
+                set_start(start_date, time, amount, 1)
+                set_start(start_date, time, amount, 2)
             else:
-                set_expiry(kill_date, time, amount, feeder_number)
+                set_start(start_date, time, amount, feeder_number)
+
+        # if expiry date supplied, trigger set_expiry
+        if expiry_date:
+            if feeder_number == "all":
+                set_expiry(expiry_date, time, amount, 1)
+                set_expiry(expiry_date, time, amount, 2)
+            else:
+                set_expiry(expiry_date, time, amount, feeder_number)
 
         # Show new schedules
         clean_data: dict = fetch_feeder_info()
