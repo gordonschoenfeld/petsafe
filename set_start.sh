@@ -33,8 +33,8 @@ fi
 
 # --- CONSTRUCT THE COMMANDS ---
 
-# 1. The actual work: Call your add_scheduled_feed script
-DO_WORK="/usr/bin/bash /path/to/add_scheduled_feed.sh $TARGET_HOUR_INT $TARGET_MIN_INT $FEEDER_NUM $AMOUNT"
+# 1. The actual work: Call add_scheduled_feed.sh script
+DO_WORK="/bin/bash ./add_scheduled_feed.sh $TARGET_HOUR_INT:$TARGET_MIN_INT $FEEDER_NUM $AMOUNT"
 
 # 2. The Self-Destruct: Remove any line containing this unique JOB_TAG from crontab
 SELF_DESTRUCT="crontab -l | grep -v '$JOB_TAG' | crontab -"
@@ -44,7 +44,7 @@ FULL_CMD="{ $DO_WORK; $SELF_DESTRUCT; }"
 
 # --- SCHEDULE THE JOB ---
 # Cron format: Min Hour Day Month Weekday
-CRON_SCHEDULE="00 00 $START_DAY_INT $START_MONTH_INT *"
+CRON_SCHEDULE="0 0 $START_DAY_INT $START_MONTH_INT *"
 
 # Combine schedule, command, and the comment tag
 NEW_JOB="$CRON_SCHEDULE $FULL_CMD $JOB_TAG"
