@@ -119,7 +119,7 @@ def get_feeder_number_flex() -> int | str:
     elif feeder_number in ['all', 'a']:
         return "all"
     elif feeder_number == '':
-        print(f"⚠️ Interpreting as all.")
+        print(f"⚠️ Interpreting as 'all'.")
         return "all"
     # option 1. under stairs
     elif feeder_number.lower().strip() in ['1', '1.', 'under stairs', 'us', 'u', 'under', 'stairs', 's']:
@@ -140,16 +140,16 @@ def get_amount() -> int | str:
     if amount in ['exit', 'x', 'quit', 'q']:
         print("Exiting program.")
         exit()
-    # reject invalid amount
-    if (not amount.isdigit() or int(amount) < 1) and amount not in ['default', 'd', 'auto', 'a']:
-        print("Invalid amount. Please enter a positive integer, or 'DEFAULT'.")
-        return get_amount()  # Retry
     # default option
     if amount.lower() in ['default', 'd', 'auto', 'a']:
         return "default"
-    elif amount == '':
-        print(f"⚠️ Interpreting as default.")
+    if amount == '':
+        print(f"⚠️ Interpreting as 'default'.")
         return "default"
+    # reject invalid amount
+    if (not amount.isdigit() or int(amount) < 1) and amount not in ['default', 'd', 'auto', 'a', '']:
+        print("Invalid amount. Please enter a positive integer, or 'DEFAULT'.")
+        return get_amount()  # Retry
     else:
         return int(amount)
 
