@@ -118,6 +118,9 @@ def get_feeder_number_flex() -> int | str:
     # all option
     elif feeder_number in ['all', 'a']:
         return "all"
+    elif feeder_number == '':
+        print(f"⚠️ Interpreting as all.")
+        return "all"
     # option 1. under stairs
     elif feeder_number.lower().strip() in ['1', '1.', 'under stairs', 'us', 'u', 'under', 'stairs', 's']:
         return 1
@@ -143,6 +146,9 @@ def get_amount() -> int | str:
         return get_amount()  # Retry
     # default option
     if amount.lower() in ['default', 'd', 'auto', 'a']:
+        return "default"
+    elif amount == '':
+        print(f"⚠️ Interpreting as default.")
         return "default"
     else:
         return int(amount)
