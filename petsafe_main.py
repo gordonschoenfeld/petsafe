@@ -295,7 +295,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
 
 # -- ➕ ADD SCHEDULE FUNCTION --
-def add_schedule(hour: str, minute: str, amount: int | str, feeder_number: int | str) -> None:
+def add_schedule(hour: str, minute: str, amount: int | str, feeder_number: int | str) -> bool:
     amount: str = str(amount)
     feeder_number: str = str(feeder_number)
     script_path: str = "./add_scheduled_feed.sh"
@@ -317,15 +317,18 @@ def add_schedule(hour: str, minute: str, amount: int | str, feeder_number: int |
         # [DISABLED] # 3. Print the success output from the shell script
         # print("Request placed successfully!")
         # print("Output:\n", result.stdout)
+        return True
 
     except subprocess.CalledProcessError as e:
         # 4. Handle errors (e.g., script not found, permission denied)
         print(f"Error occurred while setting schedule!")
         print(f"Error Code: {e.returncode}")
         print(f"Error Message:\n{e.stderr}")
+        return False
 
     except FileNotFoundError:
         print(f"Error: could not find the script at: {script_path}")
+        return False
 
 
 # -- 🌞 SET START FUNCTION --
@@ -347,7 +350,6 @@ def set_start(start_date: tuple[str], hour: str, minute: str, amount: int | str,
     if not (start_month.isdigit() and start_day.isdigit()):
         print("❌ Error: Month and Day must be numbers.")
         return False
-
     if not (1 <= int(start_month) <= 12) or not (1 <= int(start_day) <= 31):
         print(f"❌ Error: Invalid date {start_month}/{start_day}.")
         return False
@@ -356,8 +358,8 @@ def set_start(start_date: tuple[str], hour: str, minute: str, amount: int | str,
     if str(amount).lower() == 'default':
         amount = str(feeders_list[str(feeder_number)]["default_amount"])
 
+    # 3. Call the Shell Script
     try:
-        # 3. Call the Shell Script
         result = subprocess.run(
             [script_path, str(start_month), str(start_day), str(target_hour), str(target_min), str(
                 feeder_number), str(amount)],
@@ -520,6 +522,14 @@ def task_input() -> None:
 
         # if expiry date supplied, trigger set_expiry
         if expiry_date:
+            # validate that range isn't inverted
+            if start_date:
+                date_diff = compute_date_diff(start_date, expiry_date)
+                if date_diff < 0:
+                    print(f"Error: start date is after end date.")
+                    task_input()
+                    return
+
             if feeder_number == "all":
                 set_expiry(expiry_date, hour, minute, amount, 1)
                 set_expiry(expiry_date, hour, minute, amount, 2)
