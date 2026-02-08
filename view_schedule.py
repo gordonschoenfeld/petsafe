@@ -242,7 +242,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
                     expiry_date = expiry_lookup[key]
                     expiry_day_of_week = convert_date_to_day(expiry_date)
                     # Update the note with the expiry date
-                    note = f"Ends {expiry_day_of_week} {expiry_date}"
+                    note = f"End {expiry_day_of_week} {expiry_date}"
 
                 feeding_jobs.append((feeder_name, hour, minute, amount, note))
 
