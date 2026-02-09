@@ -13,7 +13,7 @@ LOG_FILE="/tmp/pet_cron.log"
 
 # 1. Input Validation
 if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <target_hour> <target_min> <feeder_id> <amount>"
+    echo "Usage: $0 <target_hour> <target_min> <feeder_num> <amount>"
     echo "Example: $0 14 30 2 4"
     exit 1
 fi
