@@ -40,12 +40,20 @@ SCRIPT_NAME=$(basename "$PYTHON_SCRIPT")
 # 1. Change Directory (cd) -> 2. Run Python -> 3. Log Output
 FULL_COMMAND="cd $PROJECT_DIR && $PYTHON_EXEC $SCRIPT_NAME $FEEDER_NUM $AMOUNT >> $LOG_FILE 2>&1"
 
-# 4. Construct the Schedule
+# 2. Build comment
+CLEAN_HOUR=$((10#$HOUR))
+CLEAN_MIN=$((10#$MINUTE))
+
+TIME_STR=$(printf "%02d%02d" "$CLEAN_HOUR" "$CLEAN_MIN")
+
+COMMENT="#FEED_AT_$TIME_STR"
+
+# 3. Construct the Schedule
 # Minute Hour DayOfMonth Month DayOfWeek
 CRON_SCHEDULE="$((10#$MINUTE)) $((10#$HOUR)) * * *"
-NEW_JOB="$CRON_SCHEDULE $FULL_COMMAND"
+NEW_JOB="$CRON_SCHEDULE $FULL_COMMAND $COMMENT"
 
-# 5. Add the job idempotently
+# 4. Add the job idempotently
 # Checks if a job with this exact command AND arguments already exists
 if crontab -l 2>/dev/null | grep -Fq "$NEW_JOB"; then
     echo "A job for Feeder $FEEDER_NUM with Amount $AMOUNT at $HOUR:$MINUTE already exists."
