@@ -15,17 +15,18 @@ TARGET_MIN=$4
 FEEDER_NUM=$5
 AMOUNT=$6
 
-# Strip leading zeros
+# Strip leading zeros for calculation and cron-standard formatting
 START_MONTH_INT=$((10#$START_MONTH))
 START_DAY_INT=$((10#$START_DAY))
 TARGET_HOUR_INT=$((10#$TARGET_HOUR))
 TARGET_MIN_INT=$((10#$TARGET_MIN))
 
-# --- FIX 1: GET ABSOLUTE PATH ---
+# --- GET ABSOLUTE PATH ---
 # This finds the directory where THIS script is saved, no matter where you run it from.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Unique tag
+# Unique tag to identify this specific job for deletion later
+# Format: #START_FEEDER_2_AT_0830_ON_0501
 JOB_TAG="#START_FEEDER_${FEEDER_NUM}_AT_$(printf "%02d%02d" $TARGET_HOUR_INT $TARGET_MIN_INT)_ON_$(printf "%02d%02d" $START_MONTH_INT $START_DAY_INT)"
 
 # --- CHECK FOR COMMANDS ---
