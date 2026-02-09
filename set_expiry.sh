@@ -4,7 +4,7 @@
 if [ "$#" -ne 6 ]; then
     echo "Usage: $0 <expiry_month> <expiry_day> <target_hour> <target_min> <feeder_num> <amount>"
     echo "Example: $0 05 01 08 30 2 4"
-    echo "  (On May 1st, delete the job scheduled for 08:30, Feeder 2, Amount 4)"
+    echo "  (On May 1st (effective 23:59), delete the job scheduled for 08:30, Feeder 2, Amount 4)"
     exit 1
 fi
 
