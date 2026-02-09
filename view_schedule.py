@@ -66,7 +66,7 @@ def fetch_feeder_info() -> dict:
             clean_data[feeder.id]["schedules"] = []
             for schedule in feeder.data["schedules"]:
                 clean_data[feeder.id]["schedules"].append({
-                    "time": schedule["time"],       # <--- FIX: Use "time"
+                    "time": schedule["time"],
                     "amount": schedule["amount"],
                     "id": schedule["id"]
                 })
@@ -127,6 +127,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             sys.exit(1)
 
     def parse_cron_add_line(line) -> tuple | None:
+        # TODO: fix this, based off new hashtags?
         # Parse active feed_now.py lines
         target_script = "feed_now.py"
         parts = line.split()
@@ -151,6 +152,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         return feeder_name, hour, minute, amount, ""
 
     def parse_cron_start_line(line) -> tuple | None:
+        # TODO: fix this, based off new hashtags?
         """
         Parses future start jobs (add_scheduled_feed.sh).
         Ex: ... add_scheduled_feed.sh <HOUR> <MIN> <FEEDER> <AMOUNT> ...
@@ -186,9 +188,10 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         return feeder_name, hour_arg.zfill(2), min_arg.zfill(2), int(amount_arg), start_date_str
 
     def parse_cron_expiry_line(line) -> tuple | None:
+        # TODO: fix this, based off new hashtags?
         # Define the pattern with named groups
         pattern = re.compile(
-            r"^59 23 (?P<day>\d+) (?P<month>\d+) \* .*? # EXPIRY_AUTO_REMOVE_F(?P<feeder>\d+)_A(?P<amount>[^_]+)_T(?P<time>\d{4})$")
+            r"^59 23 (?P<day>\d+) (?P<month>\d+) \* .*? # EXPIRY_AUTO_REMOVE_F(?P<feeder>\d+)_A(?P<amount>[^_]+)_at_T(?P<time>\d{4})$")
 
         match = pattern.search(line)
         if match:
@@ -243,7 +246,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
                 feeding_jobs.append((feeder_name, hour, minute, amount, note))
 
-        # --- PASS 3: Future Start Jobs (NEW) ---
+        # --- PASS 3: Future Start Jobs ---
         for line in cron_lines:
             start_data = parse_cron_start_line(line)
             if start_data:
