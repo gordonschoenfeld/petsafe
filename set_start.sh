@@ -37,11 +37,7 @@ fi
 
 # --- CONSTRUCT THE COMMANDS ---
 
-# --- FIX 2: USE ABSOLUTE PATH & CHECK ARGS ---
 # We use $SCRIPT_DIR to ensure cron finds the file.
-# NOTE: I changed "$TARGET_HOUR_INT:$TARGET_MIN_INT" back to two separate arguments 
-# because standard bash scripts usually expect separate args ($1, $2). 
-# If your add_scheduled_feed.sh explicitly expects "HH:MM", change this back to a colon.
 DO_WORK="/bin/bash $SCRIPT_DIR/add_scheduled_feed.sh $TARGET_HOUR_INT $TARGET_MIN_INT $FEEDER_NUM $AMOUNT"
 
 # The Self-Destruct
