@@ -127,7 +127,6 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             sys.exit(1)
 
     def parse_cron_add_line(line) -> tuple | None:
-        # TODO: fix this, based off new hashtags?
         # Parse active feed_now.py lines
         target_script = "feed_now.py"
         parts = line.split()
@@ -188,10 +187,10 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         return feeder_name, hour_arg.zfill(2), min_arg.zfill(2), int(amount_arg), start_date_str
 
     def parse_cron_expiry_line(line) -> tuple | None:
-        # TODO: fix this, based off new hashtags?
+        # Example: 59 23 10 02 * /usr/local/bin/python3 -c 'import time,random; time.sleep(random.random() * 20)' && crontab -l | grep -E -v '^34[ \t]+12[ \t]+.*feed_now.py 1 1' | grep -F -v '#EXPIRY_AUTO_REMOVE_F1_A1_at_T1234' | crontab - #EXPIRY_AUTO_REMOVE_F1_A1_at_T1234
         # Define the pattern with named groups
         pattern = re.compile(
-            r"^59 23 (?P<day>\d+) (?P<month>\d+) \* .*? # EXPIRY_AUTO_REMOVE_F(?P<feeder>\d+)_A(?P<amount>[^_]+)_at_T(?P<time>\d{4})$")
+            r"^59 23 (?P<day>\d+) (?P<month>\d+) \* .*? #EXPIRY_AUTO_REMOVE_F(?P<feeder>\d+)_A(?P<amount>[^_]+)_at_T(?P<time>\d{4})$")
 
         match = pattern.search(line)
         if match:
