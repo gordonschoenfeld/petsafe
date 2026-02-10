@@ -46,7 +46,7 @@ CLEAN_MIN=$((10#$MINUTE))
 
 TIME_STR=$(printf "%02d%02d" "$CLEAN_HOUR" "$CLEAN_MIN")
 
-COMMENT="#FEED_at_$TIME_STR"
+COMMENT="#FEED_F${FEEDER_NUM}_A${AMOUNT}_at_$TIME_STR"
 
 # 3. Construct the Schedule
 # Minute Hour DayOfMonth Month DayOfWeek
