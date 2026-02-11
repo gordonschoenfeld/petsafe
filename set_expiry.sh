@@ -56,7 +56,7 @@ fi
 # We use Python to sleep for a random float between 0 and 20 seconds.
 # This prevents race conditions by spreading execution across millions of possible start times.
 RANDOM_SLEEP="import time,random; time.sleep(random.random() * 20)"
-KILLER_CMD="/usr/local/bin/python3 -c '$RANDOM_SLEEP' && crontab -l | grep -E -v '$FEED_PATTERN' | grep -F -v '$EXPIRY_TAG' | crontab -"
+KILLER_CMD="python3 -c '$RANDOM_SLEEP' && crontab -l | grep -E -v '$FEED_PATTERN' | grep -F -v '$EXPIRY_TAG' | crontab -"
 
 # --- SCHEDULE THE JOB ---
 # Cron format: 59 23 Day Month * Command
