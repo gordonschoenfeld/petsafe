@@ -68,12 +68,6 @@ NEW_JOB="$CRON_SCHEDULE $KILLER_CMD $EXPIRY_TAG"
 # Write to Crontab
 if (crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -; then
     :
-    # Commenting out success messages. Above colon is needed to "do nothing"
-    # echo "✅ Success! Scheduled expiration ☠️."
-    # echo "   Expiry Date: $EXPIRY_MONTH/$EXPIRY_DAY at 23:59"
-    # echo "   Time:        $TARGET_HOUR:$TARGET_MIN"
-    # echo "   Feeder:      $FEEDER_NUM"
-    # echo "   Amount:      $AMOUNT unit(s)"
 else
     echo "❌ Error: Failed to update crontab."
     exit 1
