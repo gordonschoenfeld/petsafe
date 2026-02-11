@@ -213,6 +213,7 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
             r')$'
         )
 
+        # TODO: understand why this fails to catch "210"
         match = re.match(pattern, date_str)
 
         if not match:
@@ -528,14 +529,14 @@ def task_input() -> None:
             if date_diff < 0:
                 print(f"Error: start date is after end date.")
                 task_input()
-                return
 
         # validate that end date isn't in past 180 days
         # TODO: build this check
 
         # if start date == today: return start date = None (for immediate effectiveness)
-        # TODO: fix me
-        if start_date == datetime.now().strftime("%m/%d"):
+        todays_date = (datetime.now().strftime('%m'),
+                       datetime.now().strftime('%d'))
+        if start_date == todays_date:
             start_date = ''
 
         # if start date supplied, trigger set_start
