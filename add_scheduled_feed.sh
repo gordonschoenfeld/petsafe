@@ -5,8 +5,10 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 # Define the Python script location relative to this script
 PYTHON_SCRIPT="$SCRIPT_DIR/feed_now.py"
-# We assume 'python3' is in the path, but using full path is safer
-PYTHON_EXEC="/usr/local/bin/python3"
+# Not using python3's full path since it differs:
+# Full path (Pi)  = /usr/bin/python3
+# Full path (Mac) = /usr/local/bin/python3
+PYTHON_EXEC="python3"
 # Log file location (Matches what we used in manual debugging)
 LOG_FILE="/tmp/pet_cron.log"
 # ---------------------
