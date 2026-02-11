@@ -213,7 +213,6 @@ def get_date(clarifying_text: str = None) -> tuple[str] | None:
             r')$'
         )
 
-        # TODO: understand why this fails to catch "210"
         match = re.match(pattern, date_str)
 
         if not match:
