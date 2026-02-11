@@ -24,7 +24,7 @@ TAG_TIME=$(printf "%02d%02d" $TARGET_HOUR_INT $TARGET_MIN_INT)
 
 # --- CHECK FOR COMMANDS ---
 if ! command -v crontab &> /dev/null; then
-    echo "Error: 'crontab' command not found."
+    echo "ERROR: 'crontab' command not found."
     exit 1
 fi
 
@@ -69,6 +69,6 @@ NEW_JOB="$CRON_SCHEDULE $KILLER_CMD $EXPIRY_TAG"
 if (crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -; then
     :
 else
-    echo "❌ Error: Failed to update crontab."
+    echo "ERROR: Failed to update crontab."
     exit 1
 fi
