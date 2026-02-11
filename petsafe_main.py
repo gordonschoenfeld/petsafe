@@ -23,10 +23,10 @@ def initialize_resources():
     # Load tokens
     try:
         # Update this path if necessary
-        with open("petsafe_tokens.json", "r") as f:
+        with open("tokens_petsafe.json", "r") as f:
             saved_tokens = json.load(f)
     except FileNotFoundError:
-        print("Error: 'petsafe_tokens.json' not found. Please run auth_setup.py first.")
+        print("Error: 'tokens_petsafe.json' not found. Please run auth_setup.py first.")
         exit()
 
     # Initialize client (The slow part: Network connection)
@@ -530,12 +530,13 @@ def task_input() -> None:
                 task_input()
                 return
 
-        if not start_date:
-            if feeder_number == "all":
-                add_schedule(hour, minute, amount, 1)
-                add_schedule(hour, minute, amount, 2)
-            else:
-                add_schedule(hour, minute, amount, feeder_number)
+        # validate that end date isn't in past 180 days
+        # TODO: build this check
+
+        # if start date == today: return start date = None (for immediate effectiveness)
+        # TODO: fix me
+        if start_date == datetime.now().strftime("%m/%d"):
+            start_date = ''
 
         # if start date supplied, trigger set_start
         if start_date:
@@ -545,9 +546,16 @@ def task_input() -> None:
             else:
                 set_start(start_date, hour, minute, amount, feeder_number)
 
+        # if no start date supplied: trigger now
+        else:
+            if feeder_number == "all":
+                add_schedule(hour, minute, amount, 1)
+                add_schedule(hour, minute, amount, 2)
+            else:
+                add_schedule(hour, minute, amount, feeder_number)
+
         # if expiry date supplied, trigger set_expiry
         if expiry_date:
-
             if feeder_number == "all":
                 set_expiry(expiry_date, hour, minute, amount, 1)
                 set_expiry(expiry_date, hour, minute, amount, 2)
