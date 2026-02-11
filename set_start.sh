@@ -31,7 +31,7 @@ JOB_TAG="#START_F${FEEDER_NUM}_A${AMOUNT}_at_$(printf "%02d%02d" $TARGET_HOUR_IN
 
 # --- CHECK FOR COMMANDS ---
 if ! command -v crontab &> /dev/null; then
-    echo "Error: 'crontab' command not found."
+    echo "ERROR: 'crontab' command not found."
     exit 1
 fi
 
@@ -54,8 +54,8 @@ NEW_JOB="$CRON_SCHEDULE $FULL_CMD $JOB_TAG"
 
 # --- WRITE TO CRONTAB ---
 if (crontab -l 2>/dev/null | grep -v "$JOB_TAG"; echo "$NEW_JOB") | crontab -; then
-    echo "✅ Success! Scheduled start for $START_MONTH/$START_DAY."
+    :
 else
-    echo "❌ Error: Failed to update crontab."
+    echo "ERROR: Failed to update crontab."
     exit 1
 fi
