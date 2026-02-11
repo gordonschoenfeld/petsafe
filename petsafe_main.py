@@ -520,20 +520,33 @@ def task_input() -> None:
         amount = get_amount()
         start_date = get_date("start")
         expiry_date = get_date("final")
+        todays_date = (datetime.now().strftime('%m'),
+                       datetime.now().strftime('%d'))
 
-        # validate that range isn't inverted
+        # validate that dates aren't over 180 days from now; if so, send back for re-input
+        if start_date:
+            start_days_from_today = compute_date_diff(
+                todays_date, start_date)
+            if start_days_from_today > 180:
+                print(
+                    f"ERROR: Start date is in past, or more than 180 days in the future.")
+                task_input()
+        if expiry_date:
+            expiry_days_from_today = compute_date_diff(
+                todays_date, expiry_date)
+            if expiry_days_from_today > 180:
+                print(
+                    f"ERROR: Expiry date is in past, or more than 180 days in the future.")
+                task_input()
+
+        # validate that range isn't inverted; if so, send back for re-input
         if start_date and expiry_date:
             date_diff = compute_date_diff(start_date, expiry_date)
             if date_diff < 0:
-                print(f"Error: start date is after end date.")
+                print(f"ERROR: Start date is after end date.")
                 task_input()
 
-        # validate that end date isn't in past 180 days
-        # TODO: build this check
-
         # if start date == today: return start date = None (for immediate effectiveness)
-        todays_date = (datetime.now().strftime('%m'),
-                       datetime.now().strftime('%d'))
         if start_date == todays_date:
             start_date = ''
 
