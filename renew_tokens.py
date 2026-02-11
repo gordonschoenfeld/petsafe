@@ -9,7 +9,7 @@ import sys
 # --- 1. SETUP PATHS ---
 # calculate the absolute path to the folder where this script lives
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-TOKEN_FILE = os.path.join(SCRIPT_DIR, "petsafe_tokens.json")
+TOKEN_FILE = os.path.join(SCRIPT_DIR, "tokens_petsafe.json")
 
 
 # --- 2. DEFINE THE PATCH ---
