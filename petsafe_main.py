@@ -488,7 +488,7 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
 
     # 7. Execute Removal
     try:
-        # Note: We pass hour and minute separately because your script likely expects $1 and $2
+        # Note: We pass hour and minute separately because script expects $1 and $2
         result = subprocess.run(
             ["./remove_scheduled_feed.sh",
                 str(feeder_number), str(hour), str(minute)],
@@ -496,7 +496,6 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
             capture_output=True,
             text=True
         )
-        print(f"✅ Successfully removed schedule for {target_time}.")
         return True
 
     except subprocess.CalledProcessError as e:
