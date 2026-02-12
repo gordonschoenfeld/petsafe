@@ -38,7 +38,7 @@ SEARCH_PATTERN="#EXPIRY_AUTO_REMOVE_F${FEEDER_NUM}_A.*_at_$(printf "%02d%02d" $H
 
 # --- 3. CHECK IF JOB EXISTS ---
 if ! crontab -l | grep -Eq "$SEARCH_PATTERN"; then
-    echo "ERROR: No expiry found for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
+    echo "⚠️ ERROR: No expiry found for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
     exit 1
 fi
 
@@ -53,6 +53,6 @@ if crontab "$TMP_CRON"; then
     # echo "Success! Removed schedule for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
 else
     rm "$TMP_CRON"
-    echo "ERROR: Failed to remove expiry command."
+    echo "⚠️ ERROR: Failed to remove expiry command."
     exit 1
 fi
