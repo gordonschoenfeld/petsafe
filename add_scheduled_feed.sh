@@ -56,7 +56,6 @@ CRON_SCHEDULE="$((10#$MINUTE)) $((10#$HOUR)) * * *"
 NEW_JOB="$CRON_SCHEDULE $FULL_COMMAND $COMMENT"
 
 # 4. Add the job idempotently
-# Checks if a job with this exact command AND arguments already exists
 (crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -
 echo "Success! Cron job created:"
 echo "   Time:   $HOUR:$MINUTE daily"
