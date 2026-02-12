@@ -26,7 +26,7 @@ TARGET_MIN_INT=$((10#$TARGET_MIN))
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Unique tag to identify this specific job for deletion later
-# Format: #START_F2_AT_0830_ON_0501
+# Format: #START_F2_A4_at_0830_ON_0501
 JOB_TAG="#START_F${FEEDER_NUM}_A${AMOUNT}_at_$(printf "%02d%02d" $TARGET_HOUR_INT $TARGET_MIN_INT)_ON_$(printf "%02d%02d" $START_MONTH_INT $START_DAY_INT)"
 
 # --- CHECK FOR COMMANDS ---
