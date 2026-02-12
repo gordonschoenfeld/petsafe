@@ -442,26 +442,27 @@ def set_expiry(expiry_date: tuple[str], hour: str, minute: str, amount: int | st
         return False
 
 
-# -- 🗑️ REMOVE SCHEDULE FUNCTION --
-def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> None:
-    # NOTE Schedule format: (feeder_name: str, time: str, amount: str, source: str)
-
+# -- 🔎 FIND SCHEDULE --
+def find_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> None:
     # 1. Resolve Feeder ID and Name
     feeder_id = get_id_by_number(clean_data, feeder_number)
     if not feeder_id:
         print(f"ERROR: Feeder number {feeder_number} not found.")
         return
-
     target_feeder_name = clean_data[feeder_id]['name']
 
     # 2. Construct the time string matches the format in all_schedules ("HH:MM")
-    target_time = f"{hour}:{minute}"
+    time = f"{hour}:{minute}"
 
     # 3. Find matches
     matching_result = [
         item for item in all_schedules
-        if item[0] == target_feeder_name and item[1] == target_time
+        if item[0] == target_feeder_name and item[1] == time
     ]
+
+    if not matching_result:
+        return None
+
     # NOTE format: matching_result=[('Under ***REMOVED***', '08:00', '¼ cup', '02/20 ~ 02/24')]
     # Instantiate vars
     matching_result_active: list = []
@@ -496,21 +497,46 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
     matching_result_nonapp = [
         item for item in matching_result if item[3] != "Set in app"]
 
-    # 5. Handle errors
-    # a. "Set in App" restriction: If we found it in the App but NOT locally, we can't delete it.
+    # 5. Pass response
+    match_blob = {'active': matching_result_active,
+                  'future': matching_result_future,
+                  'expiry': matching_result_expiry,
+                  'nonapp': matching_result_nonapp,
+                  'app': matching_result_app,
+                  'time': time}
+    return match_blob
+
+
+# -- 🗑️ REMOVE SCHEDULE FUNCTION --
+def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> None:
+    # NOTE Schedule format: (feeder_name: str, time: str, amount: str, source: str)
+    # 1. Fetch matching results
+    matching_result = find_schedule(
+        hour, minute, feeder_number, clean_data, all_schedules)
+
+    # 2. Error out of no matches
+    if matching_result is None:
+        print(
+            f"⚠️ ERROR: No schedule found at {hour}:{minute} for Feeder #{feeder_number}.")
+        return
+
+    # 3. Unpack matching results
+    matching_result_active = matching_result['active']
+    matching_result_future = matching_result['future']
+    matching_result_expiry = matching_result['expiry']
+    matching_result_nonapp = matching_result['nonapp']
+    matching_result_app = matching_result['app']
+    time = matching_result['time']
+
+    # 4. Handle errors
+    #    a. "Set in App" restriction: If we found it in the App but NOT locally, we can't delete it.
     if matching_result_app and not matching_result_nonapp:
         print(
-            f"❌ Cannot remove schedule at {target_time} for Feeder #{feeder_number}.")
+            f"⚠️ ERROR: Cannot remove schedule at {time} for Feeder #{feeder_number}.")
         print(f"   (This schedule is managed by the PetSafe Cloud/App)")
         return
 
-    # b. Handle no match
-    if not matching_result:
-        print(
-            f"❌ No schedule found at {target_time} for Feeder #{feeder_number}.")
-        return
-
-    # 6. Execute Removals
+    # 5. Execute Removals
     def execute_deletion(script_name: str, feeder_number, hour, minute) -> bool:
         script_str = f"./{script_name}"
         try:
@@ -531,15 +557,16 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
             print("ERROR: remove_scheduled_feed.sh not found.")
             return False
 
+    if matching_result_expiry:
+        execute_deletion("remove_future_expiry.sh",
+                         feeder_number, hour, minute)
+
     if matching_result_active:
         execute_deletion("remove_scheduled_feed.sh",
                          feeder_number, hour, minute)
 
     if matching_result_future:
-        execute_deletion("remove_future_start.sh", feeder_number, hour, minute)
-
-    if matching_result_expiry:
-        execute_deletion("remove_future_expiry.sh",
+        execute_deletion("remove_future_start.sh",
                          feeder_number, hour, minute)
 
 
@@ -558,7 +585,8 @@ def task_input() -> None:
         todays_date = (datetime.now().strftime('%m'),
                        datetime.now().strftime('%d'))
 
-        # validate that dates aren't over 180 days from now; if so, send back for re-input
+        # 1. Perform checks
+        #    a. validate that dates aren't over 180 days from now; if so, send back for re-input
         if start_date:
             start_days_from_today = compute_date_diff(
                 todays_date, start_date)
@@ -574,18 +602,24 @@ def task_input() -> None:
                     f"ERROR: Expiry date is in past, or more than 180 days in the future.")
                 task_input()
 
-        # validate that range isn't inverted; if so, send back for re-input
+        #    b. validate that range isn't inverted; if so, send back for re-input
         if start_date and expiry_date:
             date_diff = compute_date_diff(start_date, expiry_date)
             if date_diff < 0:
                 print(f"ERROR: Start date is after end date.")
                 task_input()
 
-        # if start date == today: return start date = None (for immediate effectiveness)
+        #    c. if start date == today: return start date = None (for immediate effectiveness)
         if start_date == todays_date:
             start_date = ''
 
-        # if start date supplied, trigger set_start
+        # 2. Check for existing entry
+        # TODO: check
+        # TODO: if existing: prompt, with entry (allow exit)
+        # TODO: if yes: perform removals, then proceed
+
+        # 3. Execute
+        #    a. if start date supplied, trigger set_start
         if start_date:
             if feeder_number == "all":
                 set_start(start_date, hour, minute, amount, 1)
@@ -593,7 +627,7 @@ def task_input() -> None:
             else:
                 set_start(start_date, hour, minute, amount, feeder_number)
 
-        # if no start date supplied: trigger now
+        #    b. if no start date supplied: trigger now
         else:
             if feeder_number == "all":
                 add_schedule(hour, minute, amount, 1)
@@ -601,7 +635,7 @@ def task_input() -> None:
             else:
                 add_schedule(hour, minute, amount, feeder_number)
 
-        # if expiry date supplied, trigger set_expiry
+        #    c. if expiry date supplied, trigger set_expiry
         if expiry_date:
             if feeder_number == "all":
                 set_expiry(expiry_date, hour, minute, amount, 1)
@@ -609,7 +643,7 @@ def task_input() -> None:
             else:
                 set_expiry(expiry_date, hour, minute, amount, feeder_number)
 
-        # Show new schedules
+        # 4. Show new schedules
         clean_data: dict = fetch_feeder_info()
         print(f"Updated schedules:")
         if clean_data:
