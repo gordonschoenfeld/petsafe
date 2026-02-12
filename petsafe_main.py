@@ -443,7 +443,7 @@ def set_expiry(expiry_date: tuple[str], hour: str, minute: str, amount: int | st
 
 
 # -- 🔎 FIND SCHEDULE --
-def find_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> None:
+def find_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> dict | None:
     # 1. Resolve Feeder ID and Name
     feeder_id = get_id_by_number(clean_data, feeder_number)
     if not feeder_id:
@@ -503,6 +503,7 @@ def find_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, 
                   'expiry': matching_result_expiry,
                   'nonapp': matching_result_nonapp,
                   'app': matching_result_app,
+                  'date_str': matching_result[0][3],
                   'time': time}
     return match_blob
 
@@ -577,6 +578,8 @@ def task_input() -> None:
 
     # INPUT: ADD ACTION
     if action in ['add', 'a']:
+        clean_data: dict = fetch_feeder_info()
+        all_schedules: list[tuple] = view_schedule(clean_data)
         hour, minute = get_time()
         feeder_number = get_feeder_number_flex()
         amount = get_amount()
@@ -614,9 +617,28 @@ def task_input() -> None:
             start_date = ''
 
         # 2. Check for existing entry
-        # TODO: check
-        # TODO: if existing: prompt, with entry (allow exit)
-        # TODO: if yes: perform removals, then proceed
+        matching_results_blob = find_schedule(
+            hour, minute, feeder_number, clean_data, all_schedules)
+        # if matching entry, confirm continue with user
+        if matching_results_blob is not None:
+            date_str = matching_results_blob['date_str']
+
+            # prompt, printing dates if applicable
+            if date_str == '':
+                continue_with_overwrite = input(
+                    f"Entry exists. Proceed with overwrite? (Y/N): ").strip().lower()
+            else:
+                continue_with_overwrite = input(
+                    f"Entry exists ({date_str}). Proceed with overwrite? (Y/N): ").strip().lower()
+
+            # escape hatch
+            if continue_with_overwrite not in ['y', 'yes']:
+                print("Exiting program.")
+                exit()
+            # perform removals before re-adding
+            else:
+                remove_schedule(hour, minute, feeder_number,
+                                clean_data, all_schedules)
 
         # 3. Execute
         #    a. if start date supplied, trigger set_start
