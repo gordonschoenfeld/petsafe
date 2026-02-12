@@ -26,7 +26,7 @@ def initialize_resources():
         with open("tokens_petsafe.json", "r") as f:
             saved_tokens = json.load(f)
     except FileNotFoundError:
-        print("Error: 'tokens_petsafe.json' not found. Please run auth_setup.py first.")
+        print("ERROR: 'tokens_petsafe.json' not found. Please run auth_setup.py first.")
         exit()
 
     # Initialize client (The slow part: Network connection)
@@ -364,10 +364,10 @@ def set_start(start_date: tuple[str], hour: str, minute: str, amount: int | str,
 
     # 1. Basic Validation
     if not (start_month.isdigit() and start_day.isdigit()):
-        print("❌ Error: Month and Day must be numbers.")
+        print("ERROR: Month and Day must be numbers.")
         return False
     if not (1 <= int(start_month) <= 12) or not (1 <= int(start_day) <= 31):
-        print(f"❌ Error: Invalid date {start_month}/{start_day}.")
+        print(f"ERROR: Invalid date {start_month}/{start_day}.")
         return False
 
     # 2. Handle 'default' amount
@@ -411,11 +411,11 @@ def set_expiry(expiry_date: tuple[str], hour: str, minute: str, amount: int | st
 
     # 1. Basic Validation
     if not (expiry_month.isdigit() and expiry_day.isdigit()):
-        print("❌ Error: Month and Day must be numbers.")
+        print("ERROR: Month and Day must be numbers.")
         return False
 
     if not (1 <= int(expiry_month) <= 12) or not (1 <= int(expiry_day) <= 31):
-        print(f"❌ Error: Invalid date {expiry_month}/{expiry_day}.")
+        print(f"ERROR: Invalid date {expiry_month}/{expiry_day}.")
         return False
 
     # 2. Handle 'default' amount
@@ -504,7 +504,7 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
         return False
 
     except FileNotFoundError:
-        print("Error: remove_scheduled_feed.sh not found.")
+        print("ERROR: remove_scheduled_feed.sh not found.")
         return False
 
 
