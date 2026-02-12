@@ -38,7 +38,7 @@ SEARCH_PATTERN="^$MIN_REGEX $HOUR_REGEX .*feed_now.py $FEEDER_NUM "
 
 # --- 3. CHECK IF JOB EXISTS ---
 if ! crontab -l | grep -Eq "$SEARCH_PATTERN"; then
-    echo "ERROR: No schedule found for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
+    echo "⚠️ ERROR: No schedule found for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
     # echo "Debug: Searched for regex: '$SEARCH_PATTERN'"
     exit 1
 fi
@@ -54,6 +54,6 @@ if crontab "$TMP_CRON"; then
     # echo "Success! Removed schedule for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
 else
     rm "$TMP_CRON"
-    echo "ERROR: Failed to remove existing crontab."
+    echo "⚠️ ERROR: Failed to remove existing crontab."
     exit 1
 fi

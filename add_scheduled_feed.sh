@@ -29,7 +29,7 @@ AMOUNT=$4
 if ! [[ "$HOUR" =~ ^[0-9]+$ ]] || ! [[ "$MINUTE" =~ ^[0-9]+$ ]] || \
    [ "$((10#$HOUR))" -lt 0 ] || [ "$((10#$HOUR))" -gt 23 ] || \
    [ "$((10#$MINUTE))" -lt 0 ] || [ "$((10#$MINUTE))" -gt 59 ]; then
-    echo "ERROR: Invalid time format. Please use HH:MM (00:00 to 23:59)."
+    echo "⚠️ ERROR: Invalid time format. Please use HH:MM (00:00 to 23:59)."
     exit 1
 fi
 
