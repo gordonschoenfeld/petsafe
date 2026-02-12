@@ -53,6 +53,6 @@ if crontab "$TMP_CRON"; then
     # echo "Success! Removed schedule for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
 else
     rm "$TMP_CRON"
-    echo "ERROR: Failed to remove future removal command."
+    echo "ERROR: Failed to remove expiry command."
     exit 1
 fi
