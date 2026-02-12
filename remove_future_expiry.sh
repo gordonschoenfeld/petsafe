@@ -32,8 +32,9 @@ else
 fi
 
 # The pattern we search for in crontab:
-# Example: #EXPIRY_AUTO_REMOVE_F2_A4_at_T0830
-SEARCH_PATTERN="#EXPIRY_AUTO_REMOVE_F$FEEDER_NUM_A$AMOUNT_at_T$(printf \"%02d%02d\" $TARGET_HOUR_INT $TARGET_MIN_INT)"
+# Example: #EXPIRY_AUTO_REMOVE_F2_A4_at_0830
+SEARCH_PATTERN="#EXPIRY_AUTO_REMOVE_F${FEEDER_NUM}_A.*_at_$(printf "%02d%02d" $HOUR_INT $MIN_INT)"
+
 
 # --- 3. CHECK IF JOB EXISTS ---
 if ! crontab -l | grep -Eq "$SEARCH_PATTERN"; then
