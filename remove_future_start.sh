@@ -33,7 +33,7 @@ fi
 
 # The pattern we search for in crontab:
 # Example: #START_F2_A4_at_0830_ON_0501
-SEARCH_PATTERN="#START_F$FEEDER_NUM_A$AMOUNT_at_$(printf \"%02d%02d\" $TARGET_HOUR_INT $TARGET_MIN_INT)_ON_"
+SEARCH_PATTERN="#START_F${FEEDER_NUM}_A.*_at_$(printf "%02d%02d" $HOUR_INT $MIN_INT)_ON_"
 
 # --- 3. CHECK IF JOB EXISTS ---
 if ! crontab -l | grep -Eq "$SEARCH_PATTERN"; then
