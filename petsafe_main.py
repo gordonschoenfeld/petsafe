@@ -297,10 +297,10 @@ def compute_date_diff(date1: tuple | str, date2: tuple | str) -> int | None:
         return int(result.stdout.strip())
 
     except subprocess.CalledProcessError as e:
-        print(f"Error executing script: {e.stderr}")
+        print(f"ERROR executing script: {e.stderr}")
         return None
     except ValueError:
-        print(f"Error: Script returned non-integer: {result.stdout}")
+        print(f"ERROR: Script returned non-integer: {result.stdout}")
         return None
 
 
@@ -337,13 +337,13 @@ def add_schedule(hour: str, minute: str, amount: int | str, feeder_number: int |
 
     except subprocess.CalledProcessError as e:
         # 4. Handle errors (e.g., script not found, permission denied)
-        print(f"Error occurred while setting schedule!")
-        print(f"Error Code: {e.returncode}")
-        print(f"Error Message:\n{e.stderr}")
+        print(f"ERROR occurred while setting schedule!")
+        print(f"ERROR Code: {e.returncode}")
+        print(f"ERROR Message:\n{e.stderr}")
         return False
 
     except FileNotFoundError:
-        print(f"Error: could not find the script at: {script_path}")
+        print(f"ERROR: could not find the script at: {script_path}")
         return False
 
 
@@ -390,7 +390,7 @@ def set_start(start_date: tuple[str], hour: str, minute: str, amount: int | str,
         return False
 
     except FileNotFoundError:
-        print(f"Error: '{script_path}' not found.")
+        print(f"ERROR: '{script_path}' not found.")
         return False
 
 
@@ -438,7 +438,7 @@ def set_expiry(expiry_date: tuple[str], hour: str, minute: str, amount: int | st
         return False
 
     except FileNotFoundError:
-        print(f"Error: '{script_path}' not found.")
+        print(f"ERROR: '{script_path}' not found.")
         return False
 
 
@@ -449,7 +449,7 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
     # 1. Resolve Feeder ID and Name
     feeder_id = get_id_by_number(clean_data, feeder_number)
     if not feeder_id:
-        print(f"❌ Error: Feeder number {feeder_number} not found.")
+        print(f"ERROR: Feeder number {feeder_number} not found.")
         return
 
     target_feeder_name = clean_data[feeder_id]['name']
