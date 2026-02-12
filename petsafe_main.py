@@ -297,10 +297,10 @@ def compute_date_diff(date1: tuple | str, date2: tuple | str) -> int | None:
         return int(result.stdout.strip())
 
     except subprocess.CalledProcessError as e:
-        print(f"ERROR executing script: {e.stderr}")
+        print(f"⚠️ ERROR executing script: {e.stderr}")
         return None
     except ValueError:
-        print(f"ERROR: Script returned non-integer: {result.stdout}")
+        print(f"⚠️ ERROR: Script returned non-integer: {result.stdout}")
         return None
 
 
@@ -337,13 +337,13 @@ def add_schedule(hour: str, minute: str, amount: int | str, feeder_number: int |
 
     except subprocess.CalledProcessError as e:
         # 4. Handle errors (e.g., script not found, permission denied)
-        print(f"ERROR occurred while setting schedule!")
-        print(f"ERROR Code: {e.returncode}")
-        print(f"ERROR Message:\n{e.stderr}")
+        print(f"⚠️ ERROR occurred while setting schedule!")
+        print(f"⚠️ ERROR Code: {e.returncode}")
+        print(f"⚠️ ERROR Message:\n{e.stderr}")
         return False
 
     except FileNotFoundError:
-        print(f"ERROR: could not find the script at: {script_path}")
+        print(f"⚠️ ERROR: could not find the script at: {script_path}")
         return False
 
 
@@ -367,7 +367,7 @@ def set_start(start_date: tuple[str], hour: str, minute: str, amount: int | str,
         print("ERROR: Month and Day must be numbers.")
         return False
     if not (1 <= int(start_month) <= 12) or not (1 <= int(start_day) <= 31):
-        print(f"ERROR: Invalid date {start_month}/{start_day}.")
+        print(f"⚠️ ERROR: Invalid date {start_month}/{start_day}.")
         return False
 
     # 2. Handle 'default' amount
@@ -390,7 +390,7 @@ def set_start(start_date: tuple[str], hour: str, minute: str, amount: int | str,
         return False
 
     except FileNotFoundError:
-        print(f"ERROR: '{script_path}' not found.")
+        print(f"⚠️ ERROR: '{script_path}' not found.")
         return False
 
 
@@ -415,7 +415,7 @@ def set_expiry(expiry_date: tuple[str], hour: str, minute: str, amount: int | st
         return False
 
     if not (1 <= int(expiry_month) <= 12) or not (1 <= int(expiry_day) <= 31):
-        print(f"ERROR: Invalid date {expiry_month}/{expiry_day}.")
+        print(f"⚠️ ERROR: Invalid date {expiry_month}/{expiry_day}.")
         return False
 
     # 2. Handle 'default' amount
@@ -438,7 +438,7 @@ def set_expiry(expiry_date: tuple[str], hour: str, minute: str, amount: int | st
         return False
 
     except FileNotFoundError:
-        print(f"ERROR: '{script_path}' not found.")
+        print(f"⚠️ ERROR: '{script_path}' not found.")
         return False
 
 
@@ -447,7 +447,7 @@ def find_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, 
     # 1. Resolve Feeder ID and Name
     feeder_id = get_id_by_number(clean_data, feeder_number)
     if not feeder_id:
-        print(f"ERROR: Feeder number {feeder_number} not found.")
+        print(f"⚠️ ERROR: Feeder number {feeder_number} not found.")
         return
     target_feeder_name = clean_data[feeder_id]['name']
 
@@ -582,35 +582,35 @@ def task_input() -> None:
         amount = get_amount()
         start_date = get_date("start")
         expiry_date = get_date("final")
-        todays_date = (datetime.now().strftime('%m'),
-                       datetime.now().strftime('%d'))
+        today = (datetime.now().strftime('%m'),
+                 datetime.now().strftime('%d'))
 
         # 1. Perform checks
         #    a. validate that dates aren't over 180 days from now; if so, send back for re-input
         if start_date:
             start_days_from_today = compute_date_diff(
-                todays_date, start_date)
+                today, start_date)
             if start_days_from_today > 180:
                 print(
-                    f"ERROR: Start date is in past, or more than 180 days in the future.")
+                    f"⚠️ ERROR: Start date is in past, or more than 180 days in the future.")
                 task_input()
         if expiry_date:
             expiry_days_from_today = compute_date_diff(
-                todays_date, expiry_date)
+                today, expiry_date)
             if expiry_days_from_today > 180:
                 print(
-                    f"ERROR: Expiry date is in past, or more than 180 days in the future.")
+                    f"⚠️ ERROR: Expiry date is in past, or more than 180 days in the future.")
                 task_input()
 
         #    b. validate that range isn't inverted; if so, send back for re-input
         if start_date and expiry_date:
             date_diff = compute_date_diff(start_date, expiry_date)
             if date_diff < 0:
-                print(f"ERROR: Start date is after end date.")
+                print(f"⚠️ ERROR: Start date is after end date.")
                 task_input()
 
         #    c. if start date == today: return start date = None (for immediate effectiveness)
-        if start_date == todays_date:
+        if start_date == today:
             start_date = ''
 
         # 2. Check for existing entry
