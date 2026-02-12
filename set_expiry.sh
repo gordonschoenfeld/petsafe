@@ -38,6 +38,7 @@ FEED_PATTERN="^$TARGET_MIN_INT[ \t]+$TARGET_HOUR_INT[ \t]+.*feed_now.py $FEEDER_
 
 # 2. The Expiry Tag
 # This prevents conflicts if you schedule different expiries for 8:00 vs 18:00 on the same day.
+# Format: #EXPIRY_AUTO_REMOVE_F2_A4_at_T0830
 EXPIRY_TAG="#EXPIRY_AUTO_REMOVE_F${FEEDER_NUM}_A${AMOUNT}_at_T${TAG_TIME}"
 
 # --- CHECK FOR EXISTING EXPIRY ---
