@@ -57,14 +57,9 @@ NEW_JOB="$CRON_SCHEDULE $FULL_COMMAND $COMMENT"
 
 # 4. Add the job idempotently
 # Checks if a job with this exact command AND arguments already exists
-if crontab -l 2>/dev/null | grep -Fq "$NEW_JOB"; then
-    echo "A job for Feeder $FEEDER_NUM with Amount $AMOUNT at $HOUR:$MINUTE already exists."
-    echo "Skipping to prevent duplicates."
-else
-    (crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -
-    echo "Success! Cron job created:"
-    echo "   Time:   $HOUR:$MINUTE daily"
-    echo "   Feeder: $FEEDER_NUM"
-    echo "   Amount: $AMOUNT unit(s)"
-    echo "   Log:    $LOG_FILE"
-fi
+(crontab -l 2>/dev/null; echo "$NEW_JOB") | crontab -
+echo "Success! Cron job created:"
+echo "   Time:   $HOUR:$MINUTE daily"
+echo "   Feeder: $FEEDER_NUM"
+echo "   Amount: $AMOUNT unit(s)"
+echo "   Log:    $LOG_FILE"
