@@ -37,7 +37,6 @@ fi
 SEARCH_PATTERN="^$MIN_REGEX $HOUR_REGEX .*feed_now.py $FEEDER_NUM "
 
 # --- 3. CHECK IF JOB EXISTS ---
-# FIX: Added -E so grep understands that '?' is a special character
 if ! crontab -l | grep -Eq "$SEARCH_PATTERN"; then
     echo "ERROR: No schedule found for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
     # echo "Debug: Searched for regex: '$SEARCH_PATTERN'"
@@ -45,7 +44,6 @@ if ! crontab -l | grep -Eq "$SEARCH_PATTERN"; then
 fi
 
 # --- 4. REMOVE THE JOB ---
-# FIX: Added -E so it correctly identifies the line to delete
 TMP_CRON=$(mktemp)
 crontab -l | grep -Ev "$SEARCH_PATTERN" > "$TMP_CRON"
 
@@ -53,7 +51,7 @@ crontab -l | grep -Ev "$SEARCH_PATTERN" > "$TMP_CRON"
 if crontab "$TMP_CRON"; then
     rm "$TMP_CRON"
     # Silent success is usually preferred for scripts, but you can uncomment below to see it:
-    # echo "✅ Success! Removed schedule for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
+    # echo "Success! Removed schedule for Feeder $FEEDER_NUM at $TARGET_HOUR:$TARGET_MIN."
 else
     rm "$TMP_CRON"
     echo "ERROR: Failed to write new crontab."
