@@ -458,11 +458,35 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
     target_time = f"{hour}:{minute}"
 
     # 3. Find matches
-    # We filter the list where Name matches AND Time matches
     matching_result = [
         item for item in all_schedules
         if item[0] == target_feeder_name and item[1] == target_time
     ]
+    # NOTE format: matching_result=[('***REDACTED***', '08:00', '¼ cup', '02/20 ~ 02/24')]
+    # Instantiate vars
+    matching_result_active: list = []
+    matching_result_future: list = []
+    matching_result_expiry: list = []
+
+    # a. Current active schedules
+    if matching_result[0][3] == "":
+        matching_result_active: list = matching_result
+
+    # b. Future matches
+    future_regex = r"(\d{2}\/\d{2}).* ~"
+    future_match = re.search(future_regex, matching_result[0][3])
+    if future_match:
+        matching_result_future: list = matching_result
+
+    # c. Expiry matches
+    expiry_regex = r"~ .*(\d{2}\/\d{2})"
+    expiry_match = re.search(expiry_regex, matching_result[0][3])
+    if expiry_match:
+        matching_result_expiry: list = matching_result
+
+    # d. Special case: if expiry but not future, add to active also
+    if matching_result_expiry and not matching_result_future:
+        matching_result_active: list = matching_result
 
     # 4. Check source (App vs Local)
     # Index [3] corresponds to the "Note/Source" column
@@ -472,40 +496,51 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
     matching_result_nonapp = [
         item for item in matching_result if item[3] != "Set in app"]
 
-    # 5. Handle "Set in App" restriction
-    # If we found it in the App but NOT locally, we can't delete it.
+    # 5. Handle errors
+    # a. "Set in App" restriction: If we found it in the App but NOT locally, we can't delete it.
     if matching_result_app and not matching_result_nonapp:
         print(
             f"❌ Cannot remove schedule at {target_time} for Feeder #{feeder_number}.")
         print(f"   (This schedule is managed by the PetSafe Cloud/App)")
         return
 
-    # 6. Handle "No Schedule Found"
+    # b. Handle no match
     if not matching_result:
         print(
             f"❌ No schedule found at {target_time} for Feeder #{feeder_number}.")
         return
 
-    # 7. Execute Removal
-    try:
-        # Note: We pass hour and minute separately because script expects $1 and $2
-        result = subprocess.run(
-            ["./remove_scheduled_feed.sh",
-                str(feeder_number), str(hour), str(minute)],
-            check=True,
-            capture_output=True,
-            text=True
-        )
-        return True
+    # 6. Execute Removals
+    def execute_deletion(script_name: str, feeder_number, hour, minute) -> bool:
+        script_str = f"./{script_name}"
+        try:
+            result = subprocess.run(
+                [script_str, str(feeder_number), str(hour), str(minute)],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+            return True
 
-    except subprocess.CalledProcessError as e:
-        print(
-            f"Failed to remove schedule: {e.stderr.strip() or e.stdout.strip()}")
-        return False
+        except subprocess.CalledProcessError as e:
+            print(
+                f"Failed to remove schedule: {e.stderr.strip() or e.stdout.strip()}")
+            return False
 
-    except FileNotFoundError:
-        print("ERROR: remove_scheduled_feed.sh not found.")
-        return False
+        except FileNotFoundError:
+            print("ERROR: remove_scheduled_feed.sh not found.")
+            return False
+
+    if matching_result_active:
+        execute_deletion("remove_scheduled_feed.sh",
+                         feeder_number, hour, minute)
+
+    if matching_result_future:
+        execute_deletion("remove_future_start.sh", feeder_number, hour, minute)
+
+    if matching_result_expiry:
+        execute_deletion("remove_future_expiry.sh",
+                         feeder_number, hour, minute)
 
 
 # --- 🌳 MAIN INPUT TREE ---
