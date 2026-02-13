@@ -578,15 +578,18 @@ def task_input() -> None:
 
     # INPUT: ADD ACTION
     if action in ['add', 'a']:
+        # declare independent vars
         clean_data: dict = fetch_feeder_info()
         all_schedules: list[tuple] = view_schedule(clean_data)
+        today = (datetime.now().strftime('%m'),
+                 datetime.now().strftime('%d'))
+
+        # prompt for other vars
         hour, minute = get_time()
         feeder_number = get_feeder_number_flex()
         amount = get_amount()
         start_date = get_date("start")
         expiry_date = get_date("final")
-        today = (datetime.now().strftime('%m'),
-                 datetime.now().strftime('%d'))
 
         # 1. Perform checks
         #    a. validate that dates aren't over 180 days from now; if so, send back for re-input
