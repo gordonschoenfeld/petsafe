@@ -509,7 +509,6 @@ def find_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, 
 
 
 # -- ✔️ CHECK DATES --
-# TODO: validate why fail -> success duplicates
 def date_checks(start_date, expiry_date):
     today = (datetime.now().strftime('%m'),
              datetime.now().strftime('%d'))
