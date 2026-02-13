@@ -147,7 +147,7 @@ def get_amount() -> int | str:
         print(f"⚠️ Interpreting as 'default'.")
         return "default"
     # reject invalid amount
-    if (not amount.isdigit() or int(amount) < 1) and amount not in ['default', 'd', 'auto', 'a', '']:
+    if (not amount.isdigit() or int(amount) < 1 or int(amount) > 8) and amount not in ['default', 'd', 'auto', 'a', '']:
         print("Invalid amount. Please enter a positive integer, or 'DEFAULT'.")
         return get_amount()  # Retry
     else:
@@ -508,6 +508,39 @@ def find_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, 
     return match_blob
 
 
+# -- ✔️ CHECK DATES --
+# TODO: validate why fail -> success duplicates
+def date_checks(start_date, expiry_date):
+    today = (datetime.now().strftime('%m'),
+             datetime.now().strftime('%d'))
+
+    # 1. validate that dates aren't over 180 days from now; if so, send back for re-input
+    if start_date:
+        start_days_from_today = compute_date_diff(
+            today, start_date)
+        if start_days_from_today > 180:
+            print(
+                f"⚠️ ERROR: Start date is in past, or more than 180 days in the future.")
+            return "ERROR"
+    if expiry_date:
+        expiry_days_from_today = compute_date_diff(
+            today, expiry_date)
+        if expiry_days_from_today > 180:
+            print(
+                f"⚠️ ERROR: Expiry date is in past, or more than 180 days in the future.")
+            return "ERROR"
+
+    # 2. validate that range isn't inverted; if so, send back for re-input
+    if start_date and expiry_date:
+        date_diff = compute_date_diff(start_date, expiry_date)
+        if date_diff < 0:
+            print(f"⚠️ ERROR: Start date is after end date.")
+            return "ERROR"
+
+    # If no errors: return nothing
+    return
+
+
 # -- 🗑️ REMOVE SCHEDULE FUNCTION --
 def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> None:
     # NOTE Schedule format: (feeder_name: str, time: str, amount: str, source: str)
@@ -591,33 +624,19 @@ def task_input() -> None:
         start_date = get_date("start")
         expiry_date = get_date("final")
 
-        # 1. Perform checks
-        #    a. validate that dates aren't over 180 days from now; if so, send back for re-input
-        if start_date:
-            start_days_from_today = compute_date_diff(
-                today, start_date)
-            if start_days_from_today > 180:
-                print(
-                    f"⚠️ ERROR: Start date is in past, or more than 180 days in the future.")
-                task_input()
-        if expiry_date:
-            expiry_days_from_today = compute_date_diff(
-                today, expiry_date)
-            if expiry_days_from_today > 180:
-                print(
-                    f"⚠️ ERROR: Expiry date is in past, or more than 180 days in the future.")
-                task_input()
-
-        #    b. validate that range isn't inverted; if so, send back for re-input
-        if start_date and expiry_date:
-            date_diff = compute_date_diff(start_date, expiry_date)
-            if date_diff < 0:
-                print(f"⚠️ ERROR: Start date is after end date.")
-                task_input()
-
-        #    c. if start date == today: return start date = None (for immediate effectiveness)
+        # If start date == today: return start date = None (for immediate effectiveness)
         if start_date == today:
             start_date = ''
+
+        # 1. Perform checks. If issue, send back to task input
+        if date_checks(start_date, expiry_date) == "ERROR":
+            hour = ''
+            minute = ''
+            feeder_number = ''
+            amount = ''
+            start_date = ''
+            expiry_date = ''
+            return task_input()
 
         # 2. Check for existing entry
         matching_results_blob = find_schedule(
