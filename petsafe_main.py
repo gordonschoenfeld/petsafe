@@ -617,24 +617,18 @@ def task_input() -> None:
                  datetime.now().strftime('%d'))
 
         # prompt for other vars
-        hour, minute = get_time()
-        feeder_number = get_feeder_number_flex()
-        amount = get_amount()
-        start_date = get_date("start")
-        expiry_date = get_date("final")
+        hour, minute = get_time()                             # both str
+        feeder_number: int | str = get_feeder_number_flex()
+        amount: int | str = get_amount()
+        start_date: tuple[str] = get_date("start")
+        expiry_date: tuple[str] = get_date("final")
 
         # If start date == today: return start date = None (for immediate effectiveness)
         if start_date == today:
             start_date = ''
 
-        # 1. Perform checks. If issue, send back to task input
+        # 1. Perform checks. If issue, reset vars and send back to task input
         if date_checks(start_date, expiry_date) == "ERROR":
-            hour = ''
-            minute = ''
-            feeder_number = ''
-            amount = ''
-            start_date = ''
-            expiry_date = ''
             return task_input()
 
         # 2. Check for existing entry
