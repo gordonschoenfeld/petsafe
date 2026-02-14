@@ -51,57 +51,102 @@ for feeder in feeders:
     i += 1
 
 
-# -- Print feeders --
-def print_all():
-    for feeder in feeders_map:
-        print(f"• Friendly device number: {feeder}")
-        print(f"  ├─Name: {feeders_map[feeder]['name']}")
-        print(f"  ├─API ID: {feeders_map[feeder]['api_id']}")
-        print(f"  └─ID: {feeders_map[feeder]['id']}")
-    print()
-
-
-print_all()
+# -- Print feeders before inputs --
+for feeder in feeders_map:
+    print(f"• Friendly device number: {feeder}")
+    print(f"  ├─Name: {feeders_map[feeder]['name']}")
+    print(f"  ├─API ID: {feeders_map[feeder]['api_id']}")
+    print(f"  └─ID: {feeders_map[feeder]['id']}")
+print()
 
 
 # -- Set new device numbers --
 device_num_map: dict[str: str] = {}
 
 
+def assign_default_amount(feeder):
+    new_default_amount = input(
+        f"  - Enter new default feed amount, in ⅛-cup units: ").strip()
+    # Case: escape
+    if new_default_amount in ["x", "exit"]:
+        print(f"Exiting program.")
+        exit()
+    # Case: bad input ==> go back
+    elif not new_default_amount.isnumeric() or not int(new_default_amount) in range(1, 9):
+        print(f"    ⚠️ Error: You must assign an integer value, 1 ~ 8 (e.g. 2 = ¼ cup).")
+        return assign_default_amount(feeder)
+    # Case: successful entry ==> continue
+    else:
+        cups_per_unit = {1: "⅛ cup", 2: "¼ cup", 3: "⅜ cup", 4: "½ cup",
+                         5: "⅝ cup", 6: "¾ cup", 7: "⅞ cup", 8: "1 cup"}
+        print(
+            f"    ✅ Successfully set to {new_default_amount} unit(s) (= {cups_per_unit[int(new_default_amount)]})")
+        return new_default_amount
+
+
 def input_one_device_number(feeder):
     new_device_number = input(
-        f"Enter new friendly device number (e.g. 1) for {feeder} ('{feeders_map[feeder]['name']}'): ").strip()
+        f"  - Enter new friendly device number (e.g. 1): ").strip()
+    # Case: bad input ==> go back
     if not new_device_number.isdigit():
-        print(f"Error: only give a number")
+        print(f"    ⚠️ Error: You must assign an integer value (e.g. 1).")
         return input_one_device_number(feeder)
-    else:
-        device_num_map[feeder] = new_device_number
-        print(f"DEBUG | {device_num_map=}")
-        if new_device_number in device_num_map.values():
-            print(f"This ID was already used.")
-            redo_response = input(
-                f"(A) Redo this one, or (B) Start from beginning of devices?: ").strip().lower()
-            if redo_response == "a":
-                return input_one_device_number(feeder)
-            elif redo_response == "b":
-                device_num_map = {}
-                return input_device_nums_action()
-            else:
-                print(f"Response not understood. Starting over.")
-                device_num_map = {}
-                return input_device_nums_action()
+    # Case: dupe value ==> go back
+    elif new_device_number in device_num_map.values():
+        print(f"    ⚠️ Error: This ID was already used.")
+        redo_response = input(
+            f"    (A) Reassign this one, (B) Start from beginning of devices, or (X) Exit: ").strip().lower()
+        if redo_response == "a":
+            return input_one_device_number(feeder)
+        elif redo_response == "b":
+            print(f"Starting over.")
+            device_num_map.clear()
+            return input_device_nums_action(feeders_map)
+        elif redo_response in ["x", "exit"]:
+            print(f"Exiting program.")
+            exit()
         else:
-            return new_device_number
+            print(f"    ⚠️ Error: Response not understood. Starting over.")
+            return input_device_nums_action()
+    # Case: successful entry ==> continue
+    else:
+        print(f"    ✅ Successfully set ID to {new_device_number}")
+        device_num_map[feeder] = new_device_number
+        return new_device_number
 
 
-def input_device_nums_action():
+def input_device_nums_action(feeders_map):
+    # Get new name & default amount for each feeder
     for feeder in feeders_map:
-        new_number = input_one_device_number(feeder)
-        print(f"DEBUG | {feeder=}")
-        print(f"DEBUG | {new_number=}")
-        feeder = new_number
+        # Get and add new default amount
+        print(
+            f"• Please initialize settings for device: {feeders_map[feeder]['name'].upper()}")
+        default_amount = assign_default_amount(feeder)
+        feeders_map[feeder]["default_amount"] = default_amount
+        # Get new device_num
+        input_one_device_number(feeder)
+
+    # Iterate through mapping of Old Key -> New Key, transfer over to new_feeders_map
+    new_feeders_map = {}
+
+    for old_key, new_key in device_num_map.items():
+        new_feeders_map[new_key] = feeders_map[old_key]
+    feeders_map = new_feeders_map
+
+    return new_feeders_map
 
 
-input_device_nums_action()
+# Overwrite feeders_map with new labels
+feeders_map = input_device_nums_action(feeders_map)
 
-print_all()
+
+# -- Print feeders after inputs --
+print(f"Initialized feeders:")
+print()
+for feeder in feeders_map:
+    print(f"• Friendly device number: {feeder}")
+    print(f"  ├─Name: {feeders_map[feeder]['name']}")
+    print(f"  ├─API ID: {feeders_map[feeder]['api_id']}")
+    print(f"  ├─ID: {feeders_map[feeder]['id']}")
+    print(f"  └─Default amount: {feeders_map[feeder]['default_amount']}")
+print()
