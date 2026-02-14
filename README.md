@@ -5,10 +5,19 @@ This code uses Techzune's PetSafe smartfeed library (https://github.com/Techzune
 
 
 # Setup instructions
-## 1. Set up your PetSafe feeder(s) and app
+## 1. Prerequisites
+
+### Set up your PetSafe feeder(s) and app
 If you haven't done so already, you should use the official PetSafe channels to set up your account on PetSafe, and connect your feeders to it.
 
-## 2. Create a directory for this library
+### Upgrade to at least Python 3.6+
+Ensure that your python version is at least 3.6. 
+* In terminal: `python3 --version`
+
+If it's below 3.6:
+* Go to [python.org/downloads](https://www.python.org/downloads)
+
+## 2. Create directory for this library
 * In terminal: 
 ```
 mkdir petsafe
@@ -17,11 +26,11 @@ cd petsafe
 
 ## 3. Establish your connection and get a key from PetSafe
 ### Install connectivity library
-* In terminal: `pip install petsafe-smartfeed`
-* In terminal: `python3 setup.py install`
+* In terminal: `pip install petsafe-smartfeed --target /api`
+* In terminal: `python3 setup.py api/install`
 
 ### Retrieve tokens
-TODO: would `auth_setup.py` work here instead????
+TODO: replace with `setup_auth.py` work here instead????
 
 #### Option A. Get tokens using command line
  * Execute `python -m petsafe_smartfeed [email@example.com]` to request an email code.

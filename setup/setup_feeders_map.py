@@ -1,26 +1,40 @@
+#!/usr/bin/python3
+
+# ABOUT
+# This script establishes a simple json config of feeders, names and user preferences.
+# They will be written into config/feeders_general_info.json.
+
 import os
 import sys
 import petsafe_smartfeed as sf
 import json
 
-
+# -- Establish vars --
 file_dir = "config/"
-filename = "feeders_general_info.json"
+filename_feeders_info = "feeders_general_info.json"
+filename_tokens = "tokens_petsafe.json"
+global token
 
 
 # -- Check if file already exists --
-def check_file_exists():
+def check_file_exists(filename: str) -> bool:
     if os.path.exists(file_dir + filename):
-        print(f"⚠️ Error: The file '{file_dir + filename}' already exists.")
-        print(f"This wizard does not need to be run again. Exiting now.")
-        sys.exit()
+        return True
     else:
-        return
+        return False
 
 
 # -- Get tokens --
-with open(file_dir + "tokens_petsafe.json", "r") as file:
-    token = json.load(file)
+def fetch_tokens_from_file():
+    if not check_file_exists(filename_tokens):
+        print(
+            f"⚠️ Error: The file '{file_dir + filename_tokens}' does not exist.")
+        print(f"Please run setup_auth.py (and ensure it saves to the correct folder)!")
+        print(f"Exiting now.")
+        sys.exit()
+    else:
+        with open(file_dir + filename_tokens, "r") as file:
+            token = json.load(file)
 
 
 # -- Fetch feeders data --
@@ -150,18 +164,37 @@ def input_device_nums_action(feeders_map: dict):
     return new_feeders_map
 
 
-# -- Write to file --
-def write_to_file(feeders_map: dict, filename: str = filename):
+# -- Write to feeders info file --
+def write_to_file(feeders_map: dict, filename: str = filename_feeders_info):
     # 'w' mode overwrites the file if it exists, or creates it if it doesn't
-    with open(filename, 'w', encoding='utf-8') as f:
+    with open(file_dir + filename, 'w', encoding='utf-8') as f:
         json.dump(feeders_map, f, indent=4, ensure_ascii=False)
-    print(f"Successfully saved data to {filename}")
 
 
 # -- Main script --
 def main():
+    # -- Print headers --
+    width = 36
+    message = "BEGINNING TOKENS SETUP"
+    print(f"")
+    print(f"=" * width)
+    print(f"|" + message.center(width-2) + "|")
+    print(f"." * width)
+
+    # -- Get tokens --
+    fetch_tokens_from_file()
+
+    # -- Fetch feeders data --
     feeders = fetch_feeders_data()
     feeders_map = parse_feeder_info(feeders)
+
+    # -- Check if feeders file already exists --
+    feeders_info_file_existence = check_file_exists(filename_feeders_info)
+    if feeders_info_file_existence:
+        print(
+            f"⚠️ Error: The file '{file_dir + filename_feeders_info}' already exists.")
+        print(f"This wizard does not need to be run again. Exiting now.")
+        sys.exit()
 
     # -- Print feeders before inputs --
     for feeder in feeders_map:
@@ -186,11 +219,17 @@ def main():
     print()
 
     write_to_file(feeders_map)
-    print(f"✅ Success: {filename} has been created with your config.")
-    print(f"Exiting setup wizard now.")
-    exit()
+    print(
+        f"✅ Success: {file_dir + filename_feeders_info} has been created with your feeders config.")
+
+    # -- Print footers --
+    width = 36
+    message = "COMPLETED TOKENS SETUP"
+    print(f"-" * width)
+    print(f"|" + message.center(width-2) + "|")
+    print(f"=" * width)
+    print(f"")
 
 
 if __name__ == "__main__":
-    check_file_exists()
     main()

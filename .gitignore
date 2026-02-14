@@ -3,3 +3,4 @@ git_update.log
 __pycache__/
 gordon_config_notes.md
 tmp/
+setup/__pycache__
