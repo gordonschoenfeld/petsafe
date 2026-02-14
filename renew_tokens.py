@@ -6,9 +6,9 @@ import requests
 import sys
 
 
-# --- 1. SETUP PATHS ---
+# --- 1. SET UP PATHS ---
 # calculate the absolute path to the folder where this script lives
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__)) + "/config"
 TOKEN_FILE = os.path.join(SCRIPT_DIR, "tokens_petsafe.json")
 
 
