@@ -40,12 +40,14 @@ def fetch_feeder_info() -> dict:
 
         for feeder in feeders:
             clean_data[feeder.id] = {}
+            # TODO: make this user-neutral, using lookups from feeders_general_info.json
             # id: ***REDACTED*** is ***REDACTED***
             if feeder.id == ***REDACTED***:
                 num = "1"
             # id: ***REDACTED*** is ***REDACTED***
             elif feeder.id == ***REDACTED***:
                 num = "2"
+            # end TODO
             else:
                 num = str(feeder.id)  # Fallback if ID is unknown
 
@@ -326,10 +328,12 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             rows = sorted(temp_rows, key=lambda x: x[1])
 
             for row in rows:
+                # TODO: Make user-neutral
                 if row[0] == "***REDACTED***":
                     name = "***REDACTED***"
                 else:
                     name = row[0]
+                # end TODO
                 print(
                     f"{name:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
             print("")

@@ -77,7 +77,7 @@ device_num_map: dict[str: str] = {}
 
 # -- Get inputs and rewrite dict --
 def input_device_nums_action(feeders_map: dict):
-    def assign_default_amount(feeder):
+    def input_default_amount(feeder):
         new_default_amount = input(
             f"  - Enter new default feed amount, in ⅛-cup units: ").strip()
         # Case: escape
@@ -88,7 +88,7 @@ def input_device_nums_action(feeders_map: dict):
         elif not new_default_amount.isnumeric() or not int(new_default_amount) in range(1, 9):
             print(
                 f"    ⚠️ Error: You must assign an integer value, 1 ~ 8 (e.g. 2 = ¼ cup).")
-            return assign_default_amount(feeder)
+            return input_default_amount(feeder)
         # Case: successful entry ==> continue
         else:
             cups_per_unit = {1: "⅛ cup", 2: "¼ cup", 3: "⅜ cup", 4: "½ cup",
@@ -127,12 +127,14 @@ def input_device_nums_action(feeders_map: dict):
             device_num_map[feeder] = new_device_number
             return new_device_number
 
-    # Get new name & default amount for each feeder
+    # TODO: Add action to optionally change name (recommended 6 chars or fewer)
+
+    # Get new ID, name, & default amount for each feeder
     for feeder in feeders_map:
         # Get and add new default amount
         print(
             f"• Please initialize settings for device: {feeders_map[feeder]['name'].upper()}")
-        default_amount = assign_default_amount(feeder)
+        default_amount = input_default_amount(feeder)
         feeders_map[feeder]["default_amount"] = default_amount
         # Get new device_num
         input_one_device_number(feeder)
