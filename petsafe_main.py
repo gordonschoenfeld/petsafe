@@ -23,10 +23,11 @@ def initialize_resources():
     # Load tokens
     try:
         # Update this path if necessary
-        with open("tokens_petsafe.json", "r") as f:
+        with open("config/tokens_petsafe.json", "r") as f:
             saved_tokens = json.load(f)
     except FileNotFoundError:
-        print("ERROR: 'tokens_petsafe.json' not found. Please run setup_auth.py first.")
+        print(
+            "ERROR: 'config/tokens_petsafe.json' not found. Please run setup_auth.py first.")
         exit()
 
     # Initialize client (The slow part: Network connection)
@@ -38,7 +39,7 @@ def initialize_resources():
     )
 
     # Fetch default amounts per feeder
-    with open("feeders_general_info.json", "r") as f:
+    with open("config/feeders_general_info.json", "r") as f:
         feeders_list = json.load(f)
 
 
@@ -352,9 +353,7 @@ def add_schedule(hour: str, minute: str, amount: int | str, feeder_number: int |
 
 # -- 🌞 SET START FUNCTION --
 def set_start(start_date: tuple[str], hour: str, minute: str, amount: int | str, feeder_number: int) -> bool:
-    """
-    Calls set_start.sh to schedule a self-destructing cron job.
-    """
+    # Calls set_start.sh to schedule a self-destructing cron job.
     script_path = "./set_start.sh"
 
     start_month, start_day = start_date
@@ -362,7 +361,7 @@ def set_start(start_date: tuple[str], hour: str, minute: str, amount: int | str,
     target_hour = hour
     target_min = minute
 
-    with open("feeders_general_info.json", "r") as f:
+    with open("config/feeders_general_info.json", "r") as f:
         feeders_list = json.load(f)
 
     # 1. Basic Validation
@@ -379,7 +378,7 @@ def set_start(start_date: tuple[str], hour: str, minute: str, amount: int | str,
 
     # 3. Call the Shell Script
     try:
-        result = subprocess.run(
+        subprocess.run(
             [script_path, str(start_month), str(start_day), str(target_hour), str(target_min), str(
                 feeder_number), str(amount)],
             capture_output=True,
@@ -409,7 +408,7 @@ def set_expiry(expiry_date: tuple[str], hour: str, minute: str, amount: int | st
     target_hour = hour
     target_min = minute
 
-    with open("feeders_general_info.json", "r") as f:
+    with open("config/feeders_general_info.json", "r") as f:
         feeders_list = json.load(f)
 
     # 1. Basic Validation

@@ -17,15 +17,16 @@ import renew_tokens
 client = renew_tokens.refresh_disk_tokens()
 
 # 2. Load feeder names (static data)
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-INFO_FILE = os.path.join(SCRIPT_DIR, "feeders_general_info.json")
+script_dir = os.path.dirname(os.path.abspath(__file__))
+subfolder = os.path.join(script_dir, "config/")
+info_file = os.path.join(subfolder, "feeders_general_info.json")
 
 # --- MAIN LOGIC ---
 try:
-    with open(INFO_FILE, "r") as f:
+    with open(info_file, "r") as f:
         feeders_list = json.load(f)
 except FileNotFoundError:
-    print(f"Error: {INFO_FILE} not found.")
+    print(f"Error: {subfolder}/{info_file} not found.")
     sys.exit(1)
 
 
