@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# ABOUT: This script keeps the server's code up to date.
+# ABOUT
+# This script keeps the server's code up to date.
 # This script runs a `git pull`.
 
 # 1. Go to the project directory
