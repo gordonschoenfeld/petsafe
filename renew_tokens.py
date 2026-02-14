@@ -89,7 +89,7 @@ def refresh_disk_tokens():
 
     except FileNotFoundError:
         print(f"Error: {TOKEN_FILE} not found.")
-        print("Please run auth_setup.py (and ensure it saves to the correct folder)!")
+        print("Please run setup_auth.py (and ensure it saves to the correct folder)!")
         sys.exit(1)
     except Exception as e:
         print(f"Error refreshing tokens: {e}")

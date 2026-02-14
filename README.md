@@ -8,10 +8,17 @@ This code uses Techzune's PetSafe smartfeed library (https://github.com/Techzune
 ## 1. Set up your PetSafe feeder(s) and app
 If you haven't done so already, you should use the official PetSafe channels to set up your account on PetSafe, and connect your feeders to it.
 
-## 2. Establish your connection and get a key from PetSafe
+## 2. Create a directory for this library
+* In terminal: 
+```
+mkdir petsafe
+cd petsafe
+```
+
+## 3. Establish your connection and get a key from PetSafe
 ### Install connectivity library
 * In terminal: `pip install petsafe-smartfeed`
-* If installing from source code, `python3 setup.py install`
+* In terminal: `python3 setup.py install`
 
 ### Retrieve tokens
 TODO: would `auth_setup.py` work here instead????
