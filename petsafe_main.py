@@ -53,12 +53,14 @@ def fetch_feeder_info() -> dict:
             return
         for feeder in feeders:
             clean_data[feeder.id] = {}
+            # TODO: change this to lookup from feeders_general_info.json
             # id: ***REMOVED*** is Under ***REMOVED***
             if feeder.id == ***REMOVED***:
                 num = "1"
             # id: ***REMOVED*** is ***REMOVED***
             elif feeder.id == ***REMOVED***:
                 num = "2"
+            # end TODO
             clean_data[feeder.id]["feeder_number"] = num
             clean_data[feeder.id]["api_id"] = feeder.data["thing_name"]
             clean_data[feeder.id]["name"] = feeders_list[num]["name"]
@@ -109,6 +111,7 @@ def get_time() -> str:
 
 
 def get_feeder_number_flex() -> int | str:
+    # TODO: Make this user-neutral
     feeder_number = input(
         "Enter feeder number: [1. Under ***REMOVED***, 2. ***REMOVED***, A. all]: ").strip().lower()
     # escape hatch
@@ -463,7 +466,7 @@ def find_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, 
     if not matching_result:
         return None
 
-    # NOTE format: matching_result=[('Under ***REMOVED***', '08:00', '¼ cup', '02/20 ~ 02/24')]
+    # NOTE format: matching_result=[('Device nickname', '08:00', '¼ cup', '02/20 ~ 02/24')]
     # Instantiate vars
     matching_result_active: list = []
     matching_result_future: list = []
