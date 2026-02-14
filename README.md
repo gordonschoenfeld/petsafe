@@ -14,8 +14,8 @@ If you haven't done so already, you should use the official PetSafe channels to 
 Ensure that your python version is at least 3.6. 
 * In terminal: `python3 --version`
 
-If it's below 3.6:
-* Go to [python.org/downloads](https://www.python.org/downloads)
+If your Python version is below 3.6:
+* Go to [python.org/downloads](https://www.python.org/downloads), and download and install the latest version of Python from there.
 
 ## 2. Create directory for this library
 * In terminal: 
@@ -24,45 +24,15 @@ mkdir petsafe
 cd petsafe
 ```
 
-## 3. Establish your connection and get a key from PetSafe
+## 3. Run wizard, to establish your connection and get a key from PetSafe
 ### Install connectivity library
 * In terminal: `pip install petsafe-smartfeed --target /api`
 * In terminal: `python3 setup.py api/install`
 
-### Retrieve tokens
-TODO: replace with `setup_auth.py` work here instead????
+### Retrieve tokens and establish config settings file
+* In terminal, run: `python3 setup_auth.py`, then follow the prompts in the console.
 
-#### Option A. Get tokens using command line
- * Execute `python -m petsafe_smartfeed [email@example.com]` to request an email code.
- * Check your email for an email code from PetSafe.
- * Enter your code to generate tokens.
-
-#### Option B. Get tokens using Python
-```
-import petsafe_smartfeed as sf
-
-# replace with your email address
-client = sf.PetSafeClient(email="email@example.com")
-client.request_code()
-
-# check your email for a code
-code = input("Enter email code: ")
-token = client.request_tokens_from_code(code)
-
-print("email:", client.email)
-print("id_token:", client.id_token)
-print("refresh_token:", client.refresh_token)
-print("access_token:", client.access_token)
-```
-
-### Save PetSafe login tokens
-In terminal, run: `python3 renew_tokens.py`. It will save (or update) your tokens in a file called `tokens_petsafe.json`. 
-
-
-## 3. Establish your `feeders_general_info.json` file
-In terminal, run `python3 setup_wizard.py`. It will guide you through the config of your feeders and your their default feeding amounts.
-
-Example resulting `feeders_general_info.json` file:
+Example resulting `config/feeders_general_info.json` config file:
 ```
 {
     "1": {
@@ -80,9 +50,12 @@ Example resulting `feeders_general_info.json` file:
 }
 ```
 
+## 4. Ready!
+To use the features, **run in terminal: `python3 petsafe_main.py`**, then follow the prompts in the console.
+
 # FAQ
-## What if I add/remove/rename feeders?
-Delete your `feeders_general_info.json` file, and rerun in terminal: `python3 setup_wizard.py`.
+## What if I add/remove/rename feeders, or want to change ?
+Run in terminal: `python3 setup_wizard.py`, then follow the prompts in the console. It will ask for your confirmation for overwriting the existing settings file.
 
 # Copyright
 TODO
