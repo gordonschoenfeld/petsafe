@@ -2,43 +2,43 @@
 
 # ABOUT
 # This script establishes a simple json config of feeders, names and user preferences.
-# They will be written into config/feeders_general_info.json.
+# They will be written into /config/feeders_general_info.json.
 
-import os
-import sys
-import petsafe_smartfeed as sf
 import json
+import os
+import petsafe_smartfeed as sf
+import sys
 
 # -- Establish vars --
 file_dir = "config/"
 filename_feeders_info = "feeders_general_info.json"
 filename_tokens = "tokens_petsafe.json"
-global token
 
 
 # -- Check if file already exists --
 def check_file_exists(filename: str) -> bool:
-    if os.path.exists(file_dir + filename):
+    if os.path.exists(filename):
         return True
     else:
         return False
 
 
-# -- Get tokens --
+# -- Fetch tokens --
 def fetch_tokens_from_file():
-    if not check_file_exists(filename_tokens):
+    if not check_file_exists(file_dir + filename_tokens):
         print(
             f"⚠️ Error: The file '{file_dir + filename_tokens}' does not exist.")
-        print(f"Please run setup_auth.py (and ensure it saves to the correct folder)!")
+        print(f"Please run setup_auth.py (and ensure it saves into /config)!")
         print(f"Exiting now.")
         sys.exit()
     else:
         with open(file_dir + filename_tokens, "r") as file:
             token = json.load(file)
+            return token
 
 
 # -- Fetch feeders data --
-def fetch_feeders_data():
+def fetch_feeders_data(token: dict):
     '''
     Sample raw data:
     {
@@ -175,26 +175,32 @@ def write_to_file(feeders_map: dict, filename: str = filename_feeders_info):
 def main():
     # -- Print headers --
     width = 36
-    message = "BEGINNING TOKENS SETUP"
+    message = "TOKENS SETUP: STARTING"
     print(f"")
     print(f"=" * width)
     print(f"|" + message.center(width-2) + "|")
     print(f"." * width)
 
     # -- Get tokens --
-    fetch_tokens_from_file()
+    token: dict = fetch_tokens_from_file()
 
     # -- Fetch feeders data --
-    feeders = fetch_feeders_data()
-    feeders_map = parse_feeder_info(feeders)
+    feeders: dict[dict] = fetch_feeders_data(token)
+    feeders_map: dict[dict] = parse_feeder_info(feeders)
 
-    # -- Check if feeders file already exists --
-    feeders_info_file_existence = check_file_exists(filename_feeders_info)
+    # -- Check if feeders file already exists. If exists, prompt: overwrite or abort? --
+    feeders_info_file_existence: bool = check_file_exists(
+        file_dir + filename_feeders_info)
     if feeders_info_file_existence:
         print(
             f"⚠️ Error: The file '{file_dir + filename_feeders_info}' already exists.")
-        print(f"This wizard does not need to be run again. Exiting now.")
-        sys.exit()
+        continue_overwrite: str = input(
+            "Continue with overwrite? Y/N: ").strip().lower()
+        if continue_overwrite in ["no", "n", "exit", "x", "quit", "q"]:
+            print(f"Aborting feeders setup.")
+            sys.exit()
+        else:
+            print(f"Continuing with overwrite.")
 
     # -- Print feeders before inputs --
     for feeder in feeders_map:
@@ -205,7 +211,7 @@ def main():
     print()
 
     # -- Overwrite feeders_map with new labels --
-    feeders_map = input_device_nums_action(feeders_map)
+    feeders_map: dict[dict] = input_device_nums_action(feeders_map)
 
     # -- Print feeders after inputs --
     print(f"Initialized feeders:")
@@ -224,7 +230,7 @@ def main():
 
     # -- Print footers --
     width = 36
-    message = "COMPLETED TOKENS SETUP"
+    message = "TOKENS SETUP: COMPLETE"
     print(f"-" * width)
     print(f"|" + message.center(width-2) + "|")
     print(f"=" * width)

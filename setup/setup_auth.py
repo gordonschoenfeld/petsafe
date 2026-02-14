@@ -2,7 +2,7 @@
 
 # ABOUT
 # This script initially establishes auth from PetSafe, for interaction with their API.
-# It writes them into config/petsafe_tokens.json.
+# It writes them into /config/tokens_petsafe.json.
 
 import json
 import os
@@ -10,7 +10,7 @@ import petsafe_smartfeed as sf
 
 # -- Print headers --
 width = 36
-message = "BEGINNING AUTH SETUP"
+message = "AUTH SETUP: STARTING"
 print(f"")
 print(f"=" * width)
 print(f"|" + message.center(width-2) + "|")
@@ -39,7 +39,7 @@ tokens = {
 }
 
 file_dir = "config/"
-filename = "petsafe_tokens.json"
+filename = "tokens_petsafe.json"
 os.makedirs(os.path.dirname(file_dir + filename), exist_ok=True)
 with open(file_dir + filename, "w") as f:
     json.dump(tokens, f, indent=4)
@@ -49,7 +49,7 @@ print(
 
 # -- Print footers --
 width = 36
-message = "COMPLETED AUTH SETUP"
+message = "AUTH SETUP: COMPLETE"
 print(f"." * width)
 print(f"|" + message.center(width-2) + "|")
 print(f"=" * width)
