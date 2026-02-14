@@ -14,6 +14,8 @@ If you haven't done so already, you should use the official PetSafe channels to 
 * If installing from source code, `python3 setup.py install`
 
 ### Retrieve tokens
+TODO: would `auth_setup.py` work here instead????
+
 #### Option A. Get tokens using command line
  * Execute `python -m petsafe_smartfeed [email@example.com]` to request an email code.
  * Check your email for an email code from PetSafe.
