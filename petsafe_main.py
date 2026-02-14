@@ -509,32 +509,25 @@ def find_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, 
 
 
 # -- ✔️ CHECK DATES --
-def date_checks(start_date, expiry_date):
+def date_checks(start_date: tuple[str], expiry_date: tuple[str]):
     today = (datetime.now().strftime('%m'),
              datetime.now().strftime('%d'))
 
     # 1. validate that dates aren't over 180 days from now; if so, send back for re-input
     if start_date:
-        start_days_from_today = compute_date_diff(
-            today, start_date)
+        start_days_from_today = compute_date_diff(today, start_date)
         if start_days_from_today > 180:
-            print(
-                f"⚠️ ERROR: Start date is in past, or more than 180 days in the future.")
-            return "ERROR"
+            return "⚠️ ERROR: Start date is in past, or more than 180 days in the future."
     if expiry_date:
-        expiry_days_from_today = compute_date_diff(
-            today, expiry_date)
+        expiry_days_from_today = compute_date_diff(today, expiry_date)
         if expiry_days_from_today > 180:
-            print(
-                f"⚠️ ERROR: Expiry date is in past, or more than 180 days in the future.")
-            return "ERROR"
+            return "⚠️ ERROR: Expiry date is in past, or more than 180 days in the future."
 
     # 2. validate that range isn't inverted; if so, send back for re-input
     if start_date and expiry_date:
         date_diff = compute_date_diff(start_date, expiry_date)
         if date_diff < 0:
-            print(f"⚠️ ERROR: Start date is after end date.")
-            return "ERROR"
+            return "⚠️ ERROR: Start date is after end date."
 
     # If no errors: return nothing
     return
@@ -628,7 +621,9 @@ def task_input() -> None:
             start_date = ''
 
         # 1. Perform checks. If issue, reset vars and send back to task input
-        if date_checks(start_date, expiry_date) == "ERROR":
+        date_checks_result = date_checks(start_date, expiry_date)
+        if date_checks_result:
+            print(date_checks_result)
             return task_input()
 
         # 2. Check for existing entry
