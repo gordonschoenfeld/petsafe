@@ -14,17 +14,14 @@ If you haven't done so already, you should use the official PetSafe channels to 
 * If installing from source code, `python3 setup.py install`
 
 ### Retrieve tokens
-There are two methods to retrieve tokens:
-
-A. Get tokens using command line
+#### Option A. Get tokens using command line
  * Execute `python -m petsafe_smartfeed [email@example.com]` to request an email code.
  * Check your email for an email code from PetSafe.
  * Enter your code to generate tokens.
 
-B. Get tokens using Python
+#### Option B. Get tokens using Python
 ```
 import petsafe_smartfeed as sf
-
 
 # replace with your email address
 client = sf.PetSafeClient(email="email@example.com")
@@ -41,18 +38,13 @@ print("access_token:", client.access_token)
 ```
 
 ### Save PetSafe login tokens
-Run `renew_tokens.py`. It will save (or update) your tokens in a file called `tokens_petsafe.json`. 
-
-## 3. Get your devices' id & api_id numbers
-TODO
-
-## 4. Set up your `feeders_general_info.json` file
-Using the `id` and `api_id` values from the previous step, establish your feeders' configs. You'll also need to establish:
-* an index (friendly) number for each feeder
-* the id number 
+In terminal, run: `python3 renew_tokens.py`. It will save (or update) your tokens in a file called `tokens_petsafe.json`. 
 
 
-Example:
+## 3. Establish your `feeders_general_info.json` file
+In terminal, run `python3 setup_wizard.py`. It will guide you through the config of your feeders and your their default feeding amounts.
+
+Example resulting `feeders_general_info.json` file:
 ```
 {
     "1": {
@@ -69,6 +61,10 @@ Example:
     }
 }
 ```
+
+# FAQ
+## What if I add/remove/rename feeders?
+Delete your `feeders_general_info.json` file, and rerun in terminal: `python3 setup_wizard.py`.
 
 # Copyright
 TODO
