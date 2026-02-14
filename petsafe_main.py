@@ -26,7 +26,7 @@ def initialize_resources():
         with open("tokens_petsafe.json", "r") as f:
             saved_tokens = json.load(f)
     except FileNotFoundError:
-        print("ERROR: 'tokens_petsafe.json' not found. Please run auth_setup.py first.")
+        print("ERROR: 'tokens_petsafe.json' not found. Please run setup_auth.py first.")
         exit()
 
     # Initialize client (The slow part: Network connection)
