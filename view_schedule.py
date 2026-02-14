@@ -151,7 +151,6 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         return feeder_name, hour, minute, amount, ""
 
     def parse_cron_start_line(line) -> tuple | None:
-        # TODO: fix this, based off new hashtags?
         """
         Parses future start jobs (add_scheduled_feed.sh).
         Ex: ... add_scheduled_feed.sh <HOUR> <MIN> <FEEDER> <AMOUNT> ...
