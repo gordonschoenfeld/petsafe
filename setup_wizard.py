@@ -1,5 +1,20 @@
+import os
+import sys
 import petsafe_smartfeed as sf
 import json
+
+
+filename = "feeders_general_info.json"
+
+
+# -- Check if file already exists --
+def check_file_exists():
+    if os.path.exists(filename):
+        print(f"⚠️ Error: The file '{filename}' already exists.")
+        print(f"This wizard does not need to be run again. Exiting now.")
+        sys.exit()
+    else:
+        return
 
 
 # -- Get tokens --
@@ -41,7 +56,7 @@ def fetch_feeders_data():
 
 
 # -- Parse feeder info --
-def parse_feeder_info(feeders):
+def parse_feeder_info(feeders: dict[dict]):
     feeders_map = {}
     i = 1
 
@@ -61,7 +76,7 @@ device_num_map: dict[str: str] = {}
 
 
 # -- Get inputs and rewrite dict --
-def input_device_nums_action(feeders_map):
+def input_device_nums_action(feeders_map: dict):
     def assign_default_amount(feeder):
         new_default_amount = input(
             f"  - Enter new default feed amount, in ⅛-cup units: ").strip()
@@ -132,6 +147,14 @@ def input_device_nums_action(feeders_map):
     return new_feeders_map
 
 
+# -- Write to file --
+def write_to_file(feeders_map: dict, filename: str = filename):
+    # 'w' mode overwrites the file if it exists, or creates it if it doesn't
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(feeders_map, f, indent=4, ensure_ascii=False)
+    print(f"Successfully saved data to {filename}")
+
+
 # -- Main script --
 def main():
     feeders = fetch_feeders_data()
@@ -159,8 +182,12 @@ def main():
         print(f"  └─Default amount: {feeders_map[feeder]['default_amount']}")
     print()
 
-    return feeders_map
+    write_to_file(feeders_map)
+    print(f"✅ Success: {filename} has been created with your config.")
+    print(f"Exiting setup wizard now.")
+    exit()
 
 
 if __name__ == "__main__":
+    check_file_exists()
     main()
