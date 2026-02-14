@@ -2,7 +2,7 @@ import json
 import petsafe_smartfeed as sf
 
 # 1. Define email
-email: str = ***REMOVED***
+email: str = input("Your email address associated with PetSafe: ")
 
 # 2. Initialize client and request a code
 print(f"Requesting access code for {email}...")

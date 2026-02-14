@@ -33,7 +33,7 @@ fi
 
 # The pattern we search for in crontab:
 # Example: ^0?0 0?1 .*feed_now.py 1 
-# Example: 39 12 * * * cd ***REDACTED*** && python3 feed_now.py 2 1 >> /tmp/pet_cron.log 2>&1 #FEED_F2_A1_at_1239
+# Example: 39 12 * * * cd /home/petsafe && python3 feed_now.py 2 1 >> /tmp/pet_cron.log 2>&1 #FEED_F2_A1_at_1239
 SEARCH_PATTERN="^$MIN_REGEX $HOUR_REGEX .*feed_now.py $FEEDER_NUM "
 
 # --- 3. CHECK IF JOB EXISTS ---
