@@ -513,6 +513,12 @@ def date_checks(start_date: tuple[str], expiry_date: tuple[str]):
     today = (datetime.now().strftime('%m'),
              datetime.now().strftime('%d'))
 
+    # Normalize blanks
+    if start_date == ('', ''):
+        start_date = None
+    if expiry_date == ('', ''):
+        expiry_date = None
+
     # 1. validate that dates aren't over 180 days from now; if so, send back for re-input
     if start_date:
         start_days_from_today = compute_date_diff(today, start_date)
