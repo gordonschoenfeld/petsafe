@@ -1,4 +1,5 @@
 import json
+import os
 import petsafe_smartfeed as sf
 
 # 1. Define email
@@ -23,5 +24,7 @@ tokens = {
     "access_token": client.access_token
 }
 
-with open("petsafe_tokens.json", "w") as f:
+filepath = "config/petsafe_tokens.json"
+os.makedirs(os.path.dirname(filepath), exist_ok=True)
+with open(filepath, "w") as f:
     json.dump(tokens, f, indent=4)
