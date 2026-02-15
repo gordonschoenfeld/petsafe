@@ -112,20 +112,20 @@ def input_device_nums_action(feeders_map: dict):
                 f"    ✅ Successfully set to {new_default_amount} unit(s) (= {cups_per_unit[int(new_default_amount)]})")
             return new_default_amount
 
-    def input_one_device_number(feeder):
+    def input_device_number(feeder):
         new_device_number = input(
             f"  - Enter new friendly device number (e.g. 1): ").strip()
         # Case: bad input ==> go back
         if not new_device_number.isdigit():
             print(f"    ⚠️ Error: You must assign an integer value (e.g. 1).")
-            return input_one_device_number(feeder)
+            return input_device_number(feeder)
         # Case: dupe value ==> go back
         elif new_device_number in device_num_map.values():
             print(f"    ⚠️ Error: This ID was already used.")
             redo_response = input(
                 f"    (A) Reassign this one, (B) Start from beginning of devices, or (X) Exit: ").strip().lower()
             if redo_response == "a":
-                return input_one_device_number(feeder)
+                return input_device_number(feeder)
             elif redo_response == "b":
                 print(f"Starting over.")
                 device_num_map.clear()
@@ -142,7 +142,22 @@ def input_device_nums_action(feeders_map: dict):
             device_num_map[feeder] = new_device_number
             return new_device_number
 
-    # TODO: Add action to optionally change name (recommended 6 chars or fewer)
+    # Optionally change name (recommended 6 chars or fewer)
+    def input_device_nickname(feeder):
+        if len(feeders_map[feeder]["name"]) > 6:
+            print(
+                f"  ℹ️ Device name is over 6 characters... this will cause rendering problems.")
+        continue_nickname: str = input(
+            f"  - Would you like to set a device nickname? Y/N: ").strip().lower()
+        if continue_nickname not in ["no", "n", "exit", "x", "quit", "q"]:
+            input_nickname: str = input(
+                f"  - Enter new friendly device nickname, recommended 6 chars or fewer (e.g. 'Living'): ").strip().lower()
+            if input_nickname in ["x", "exit"]:
+                print(f"Exiting program.")
+                exit()
+            else:
+                print(f"    ✅ Successfully set to {input_nickname}")
+                return input_nickname
 
     # Get new ID, name, & default amount for each feeder
     for feeder in feeders_map:
@@ -151,8 +166,10 @@ def input_device_nums_action(feeders_map: dict):
             f"• Please initialize settings for device: {feeders_map[feeder]['name'].upper()}")
         default_amount = input_default_amount(feeder)
         feeders_map[feeder]["default_amount"] = default_amount
+        # Get and add new device nickname
+        feeders_map[feeder]["name"] = input_device_nickname(feeder)
         # Get new device_num
-        input_one_device_number(feeder)
+        input_device_number(feeder)
 
     # Iterate through mapping of Old Key -> New Key, transfer over to new_feeders_map
     new_feeders_map = {}
@@ -231,7 +248,7 @@ def main():
     # -- Print footers --
     width = 36
     message = "TOKENS SETUP: COMPLETE"
-    print(f"-" * width)
+    print(f"." * width)
     print(f"|" + message.center(width-2) + "|")
     print(f"=" * width)
     print(f"")
