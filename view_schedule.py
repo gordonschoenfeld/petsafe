@@ -24,7 +24,7 @@ info_file = os.path.join(subfolder, "feeders_config.json")
 # --- MAIN LOGIC ---
 try:
     with open(info_file, "r") as f:
-        feeders_list = json.load(f)
+        feeders_config = json.load(f)
 except FileNotFoundError:
     print(f"Error: {subfolder}/{info_file} not found.")
     sys.exit(1)
@@ -32,38 +32,40 @@ except FileNotFoundError:
 
 def fetch_feeder_info() -> dict:
     clean_data: dict = {}
+    id_to_num_map = {}
 
     try:
+        # 1. Build the ID Map from config
+        for num_key, data in feeders_config.items():
+            # Ensure we capture the ID as an integer to match the API response
+            cfg_id = data.get("id")
+            if cfg_id:
+                id_to_num_map[int(cfg_id)] = num_key
+
+        # 2. Fetch from API
         feeders = client.feeders
         if not feeders:
             print("No feeders found on this account.")
-            return {}  # Return empty dict instead of None to prevent crashes
+            return {}
 
+        # 3. Process each feeder
         for feeder in feeders:
-            clean_data[feeder.id] = {}
-            # TODO: make this user-neutral, using lookups from feeders_config.json
-            # id: ***REDACTED*** is ***REDACTED***
-            if feeder.id == ***REDACTED***:
-                num = "1"
-            # id: ***REDACTED*** is ***REDACTED***
-            elif feeder.id == ***REDACTED***:
-                num = "2"
-            # end TODO
-            else:
-                num = str(feeder.id)  # Fallback if ID is unknown
+            # Resolve the 'num' using the numbers map
+            num = id_to_num_map.get(feeder.id)
 
+            # If we find a feeder not in our config, skip it or label it unknown
+            if not num:
+                print(f"Warning: Found unconfigured feeder ID: {feeder.id}")
+                continue
+
+            clean_data[feeder.id] = {}
             clean_data[feeder.id]["feeder_number"] = num
-            # Use .get() safely in case 'thing_name' is missing
             clean_data[feeder.id]["api_id"] = feeder.data.get(
                 "thing_name", "Unknown")
 
-            # Use safe lookups for feeders_list
-            if num in feeders_list:
-                clean_data[feeder.id]["name"] = feeders_list[num]["name"]
-                clean_data[feeder.id]["default_amount"] = feeders_list[num]["default_amount"]
-            else:
-                clean_data[feeder.id]["name"] = f"Feeder {num}"
-                clean_data[feeder.id]["default_amount"] = 1
+            # Load config data safely
+            clean_data[feeder.id]["name"] = feeders_config[num]["name"]
+            clean_data[feeder.id]["default_amount"] = feeders_config[num]["default_amount"]
 
             # Display schedules
             clean_data[feeder.id]["schedules"] = []
@@ -74,7 +76,6 @@ def fetch_feeder_info() -> dict:
                     "id": schedule["id"]
                 })
 
-            # Now this sort will work because "time" exists
             clean_data[feeder.id]["schedules"].sort(key=lambda x: x['time'])
             clean_data[feeder.id]["slow_feed"] = False
 
@@ -82,7 +83,7 @@ def fetch_feeder_info() -> dict:
 
     except Exception as e:
         print(f"\nAn error occurred in fetch_feeder_info: {e}")
-        return {}  # Return empty dict on error so we don't crash later
+        return {}
 
 
 def convert_date_to_day(date_str) -> str:
@@ -148,7 +149,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             return None
 
         # Resolve Name
-        feeder_info = feeders_list.get(str(feeder_id), {})
+        feeder_info = feeders_config.get(str(feeder_id), {})
         feeder_name = feeder_info.get("name", f"Feeder #{feeder_id}")
 
         return feeder_name, hour, minute, amount, ""
@@ -183,7 +184,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         start_date_str = f"{start_month.zfill(2)}/{start_day.zfill(2)}"
 
         # Resolve Name
-        feeder_info = feeders_list.get(str(feeder_arg), {})
+        feeder_info = feeders_config.get(str(feeder_arg), {})
         feeder_name = feeder_info.get("name", f"Feeder #{feeder_arg}")
 
         return feeder_name, hour_arg.zfill(2), min_arg.zfill(2), int(amount_arg), start_date_str
@@ -198,7 +199,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
         if match:
             data = match.groupdict()
             feeder_num: str = str(data['feeder'])
-            feeder_info = feeders_list.get(feeder_num, {})
+            feeder_info = feeders_config.get(feeder_num, {})
             feeder_name: str = feeder_info.get('name', f"Feeder #{feeder_num}")
 
             date = f"{data['month']}/{data['day']}"
@@ -329,14 +330,8 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             rows = sorted(temp_rows, key=lambda x: x[1])
 
             for row in rows:
-                # TODO: Make user-neutral
-                if row[0] == "***REDACTED***":
-                    name = "***REDACTED***"
-                else:
-                    name = row[0]
-                # end TODO
                 print(
-                    f"{name:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
+                    f"{row[0]:<{w_name}} | {row[1]:<{w_time}} | {row[2]:<{w_amount}} | {row[3]:<{w_type}}")
             print("")
 
             return rows
