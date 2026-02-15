@@ -2,7 +2,7 @@
 
 # ABOUT
 # This script establishes a simple json config of feeders, names and user preferences.
-# They will be written into /config/feeders_general_info.json.
+# They will be written into /config/feeders_config.json.
 
 import json
 import os
@@ -11,7 +11,7 @@ import sys
 
 # -- Establish vars --
 file_dir = "config/"
-filename_feeders_info = "feeders_general_info.json"
+filename_feeders_info = "feeders_config.json"
 filename_tokens = "tokens_petsafe.json"
 
 

@@ -32,7 +32,7 @@ cd petsafe
 ### Retrieve tokens and establish config settings file
 * In terminal, run: `python3 setup_auth.py`, then follow the prompts in the console.
 
-Example resulting `config/feeders_general_info.json` config file:
+Example resulting `config/feeders_config.json` config file:
 ```
 {
     "1": {
