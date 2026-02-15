@@ -39,7 +39,7 @@ def initialize_resources():
     )
 
     # Fetch default amounts per feeder
-    with open("config/feeders_general_info.json", "r") as f:
+    with open("config/feeders_config.json", "r") as f:
         feeders_list = json.load(f)
 
 
@@ -54,7 +54,7 @@ def fetch_feeder_info() -> dict:
             return
         for feeder in feeders:
             clean_data[feeder.id] = {}
-            # TODO: change this to lookup from feeders_general_info.json
+            # TODO: change this to lookup from config/feeders_config.json (var = feeders_list)
             # id: ***REMOVED*** is Under ***REMOVED***
             if feeder.id == ***REMOVED***:
                 num = "1"
@@ -361,7 +361,7 @@ def set_start(start_date: tuple[str], hour: str, minute: str, amount: int | str,
     target_hour = hour
     target_min = minute
 
-    with open("config/feeders_general_info.json", "r") as f:
+    with open("config/feeders_config.json", "r") as f:
         feeders_list = json.load(f)
 
     # 1. Basic Validation
@@ -408,7 +408,7 @@ def set_expiry(expiry_date: tuple[str], hour: str, minute: str, amount: int | st
     target_hour = hour
     target_min = minute
 
-    with open("config/feeders_general_info.json", "r") as f:
+    with open("config/feeders_config.json", "r") as f:
         feeders_list = json.load(f)
 
     # 1. Basic Validation

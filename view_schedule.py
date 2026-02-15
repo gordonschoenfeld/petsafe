@@ -19,7 +19,7 @@ client = renew_tokens.refresh_disk_tokens()
 # 2. Load feeder names (static data)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 subfolder = os.path.join(script_dir, "config/")
-info_file = os.path.join(subfolder, "feeders_general_info.json")
+info_file = os.path.join(subfolder, "feeders_config.json")
 
 # --- MAIN LOGIC ---
 try:
@@ -41,7 +41,7 @@ def fetch_feeder_info() -> dict:
 
         for feeder in feeders:
             clean_data[feeder.id] = {}
-            # TODO: make this user-neutral, using lookups from feeders_general_info.json
+            # TODO: make this user-neutral, using lookups from feeders_config.json
             # id: ***REMOVED*** is Under ***REMOVED***
             if feeder.id == ***REMOVED***:
                 num = "1"
