@@ -51,34 +51,57 @@ def fetch_feeder_info() -> dict:
         feeders = client.feeders
         if not feeders:
             print("No feeders found on this account.")
-            return
+            return {}
+
+        # 1. Build a dynamic lookup map from your loaded config
+        #    Maps the real ID (int) -> Your Custom Key (str)
+        #    Example: {***REDACTED***: "5", ***REDACTED***: "6"}
+        id_to_key_map = {}
+        for key, data in feeders_list.items():
+            if "id" in data:
+                id_to_key_map[data["id"]] = key
+
         for feeder in feeders:
+            # 2. Find the key for this feeder dynamically
+            num = id_to_key_map.get(feeder.id)
+
+            if num is None:
+                print(
+                    f"⚠️ Warning: Found unconfigured feeder (ID: {feeder.id}). Skipping.")
+                continue
+
             clean_data[feeder.id] = {}
-            # TODO: change this to lookup from config/feeders_config.json (var = feeders_list)
-            # id: ***REDACTED*** is ***REDACTED***
-            if feeder.id == ***REDACTED***:
-                num = "1"
-            # id: ***REDACTED*** is ***REDACTED***
-            elif feeder.id == ***REDACTED***:
-                num = "2"
-            # end TODO
             clean_data[feeder.id]["feeder_number"] = num
-            clean_data[feeder.id]["api_id"] = feeder.data["thing_name"]
-            clean_data[feeder.id]["name"] = feeders_list[num]["name"]
-            clean_data[feeder.id]["default_amount"] = feeders_list[num]["default_amount"]
+            clean_data[feeder.id]["api_id"] = feeder.data.get(
+                "thing_name", "Unknown")
+
+            # --- FIX STARTS HERE ---
+            # 3. Use the dynamic key 'num' to fetch details safely
+            # We use 'or' here. If .get() returns None, it falls back to f"Feeder {num}"
+            clean_data[feeder.id]["name"] = feeders_list[num].get(
+                "name") or f"Feeder {num}"
+
+            clean_data[feeder.id]["default_amount"] = feeders_list[num].get(
+                "default_amount", "1")
+            # --- FIX ENDS HERE ---
+
             # Display schedules
             clean_data[feeder.id]["schedules"] = []
-            for schedule in feeder.data["schedules"]:
-                clean_data[feeder.id]["schedules"].append({
-                    "time": schedule["time"],
-                    "amount": schedule["amount"],
-                    "id": schedule["id"]
-                })
+            if "schedules" in feeder.data:
+                for schedule in feeder.data["schedules"]:
+                    clean_data[feeder.id]["schedules"].append({
+                        "time": schedule["time"],
+                        "amount": schedule["amount"],
+                        "id": schedule["id"]
+                    })
             clean_data[feeder.id]["schedules"].sort(key=lambda x: x['time'])
             clean_data[feeder.id]["slow_feed"] = False
+
         return clean_data
+
     except Exception as e:
-        print(f"\nAn error occurred: {e}")
+        print(f"\nAn error occurred in fetch_feeder_info: {e}")
+        return {}
 
 
 # --- TRANSLATE FEEDER NUMBER INTO ID ---
@@ -112,28 +135,41 @@ def get_time() -> str:
 
 
 def get_feeder_number_flex() -> int | str:
-    # TODO: Make this user-neutral
-    feeder_number = input(
-        "Enter feeder number: [1. ***REDACTED***, 2. ***REDACTED***, A. all]: ").strip().lower()
+    # 1. Dynamically build the prompt options
+    #    Example output: "1. Living, 2. Pantry, A. all"
+    prompt_options = []
+    valid_keys = []
+
+    for key, data in feeders_list.items():
+        name = data.get("name", f"Feeder {key}")
+        prompt_options.append(f"{key}. {name}")
+        valid_keys.append(str(key))
+
+    prompt_str = "Enter feeder number: [" + \
+        ", ".join(prompt_options) + ", A. all]: "
+
+    # 2. Get input
+    feeder_number = input(prompt_str).strip().lower()
+
     # escape hatch
     if feeder_number in ['exit', 'x', 'quit', 'q']:
         print("Exiting program.")
         exit()
-    # all option
+    # all option (explicit)
     elif feeder_number in ['all', 'a']:
         return "all"
-    elif feeder_number == '':
+    # all option (implicit)
+    elif feeder_number in ['']:
         print(f"⚠️ Interpreting as 'all'.")
         return "all"
-    # option 1. under stairs
-    elif feeder_number.lower().strip() in ['1', '1.', 'under stairs', 'us', 'u', 'under', 'stairs', 's']:
-        return 1
-    # option 2. island
-    elif feeder_number.lower().strip() in ['2', '2.', 'island', 'i']:
-        return 2
+
+    # 3. Validate against the dynamic keys we found
+    elif feeder_number in valid_keys:
+        return feeder_number
+
     # reject invalid feeder number
     else:
-        print("Invalid feeder number. Please enter 1, 2, or A.")
+        print(f"Invalid number. Please enter {', '.join(valid_keys)}, or A.")
         return get_feeder_number_flex()  # Retry
 
 
@@ -550,8 +586,10 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
 
     # 2. Error out of no matches
     if matching_result is None:
+        feeder_name = feeders_list.get(
+            str(feeder_number), {}).get("name", "Unknown")
         print(
-            f"⚠️ ERROR: No schedule found at {hour}:{minute} for Feeder #{feeder_number}.")
+            f"⚠️ ERROR: No schedule found at {hour}:{minute} for {feeder_name} feeder (#{feeder_number}).")
         return
 
     # 3. Unpack matching results
@@ -565,8 +603,10 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
     # 4. Handle errors
     #    a. "Set in App" restriction: If we found it in the App but NOT locally, we can't delete it.
     if matching_result_app and not matching_result_nonapp:
+        feeder_name = feeders_list.get(
+            str(feeder_number), {}).get("name", "Unknown")
         print(
-            f"⚠️ ERROR: Cannot remove schedule at {time} for Feeder #{feeder_number}.")
+            f"⚠️ ERROR: Cannot remove schedule at {time} for {feeder_name} feeder (#{feeder_number}).")
         print(f"   (This schedule is managed by the PetSafe Cloud/App)")
         return
 
@@ -574,7 +614,7 @@ def remove_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict
     def execute_deletion(script_name: str, feeder_number, hour, minute) -> bool:
         script_str = f"./{script_name}"
         try:
-            result = subprocess.run(
+            subprocess.run(
                 [script_str, str(feeder_number), str(hour), str(minute)],
                 check=True,
                 capture_output=True,
@@ -640,48 +680,36 @@ def task_input() -> None:
         # if matching entry, confirm continue with user
         if matching_results_blob is not None:
             date_str = matching_results_blob['date_str']
+            prompt_msg = f"Entry exists ({date_str}). Proceed? (Y/N): " if date_str else "Entry exists. Proceed? (Y/N): "
 
-            # prompt, printing dates if applicable
-            if date_str == '':
-                continue_with_overwrite = input(
-                    f"Entry exists. Proceed with overwrite? (Y/N): ").strip().lower()
-            else:
-                continue_with_overwrite = input(
-                    f"Entry exists ({date_str}). Proceed with overwrite? (Y/N): ").strip().lower()
-
-            # escape hatch
-            if continue_with_overwrite not in ['y', 'yes']:
+            if input(prompt_msg).strip().lower() not in ['y', 'yes']:
                 print("Exiting program.")
                 exit()
-            # perform removals before re-adding
             else:
-                remove_schedule(hour, minute, feeder_number,
-                                clean_data, all_schedules)
+                # Use dynamic loop for removals too
+                if feeder_number == "all":
+                    for key in feeders_list.keys():
+                        remove_schedule(hour, minute, key,
+                                        clean_data, all_schedules)
+                else:
+                    remove_schedule(hour, minute, feeder_number,
+                                    clean_data, all_schedules)
 
-        # 3. Execute
-        #    a. if start date supplied, trigger set_start
-        if start_date:
-            if feeder_number == "all":
-                set_start(start_date, hour, minute, amount, 1)
-                set_start(start_date, hour, minute, amount, 2)
-            else:
-                set_start(start_date, hour, minute, amount, feeder_number)
+        # 3. Execute Add / Set Start / Set Expiry
+        #    We loop through keys if "all", or use list [feeder_number] if specific
+        target_feeders = list(feeders_list.keys()) if feeder_number == "all" else [
+            feeder_number]
 
-        #    b. if no start date supplied: trigger now
-        else:
-            if feeder_number == "all":
-                add_schedule(hour, minute, amount, 1)
-                add_schedule(hour, minute, amount, 2)
+        for feeder in target_feeders:
+            # a. Start Date
+            if start_date:
+                set_start(start_date, hour, minute, amount, feeder)
+            # b. Immediate
             else:
-                add_schedule(hour, minute, amount, feeder_number)
-
-        #    c. if expiry date supplied, trigger set_expiry
-        if expiry_date:
-            if feeder_number == "all":
-                set_expiry(expiry_date, hour, minute, amount, 1)
-                set_expiry(expiry_date, hour, minute, amount, 2)
-            else:
-                set_expiry(expiry_date, hour, minute, amount, feeder_number)
+                add_schedule(hour, minute, amount, feeder)
+            # c. Expiry
+            if expiry_date:
+                set_expiry(expiry_date, hour, minute, amount, feeder)
 
         # 4. Show new schedules
         clean_data: dict = fetch_feeder_info()

@@ -150,7 +150,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
         # Resolve Name
         feeder_info = feeders_config.get(str(feeder_id), {})
-        feeder_name = feeder_info.get("name", f"Feeder #{feeder_id}")
+        feeder_name = feeder_info.get("name", f"Feeder {feeder_id}")
 
         return feeder_name, hour, minute, amount, ""
 
@@ -185,7 +185,7 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
         # Resolve Name
         feeder_info = feeders_config.get(str(feeder_arg), {})
-        feeder_name = feeder_info.get("name", f"Feeder #{feeder_arg}")
+        feeder_name = feeder_info.get("name", f"Dvce#{feeder_arg}")
 
         return feeder_name, hour_arg.zfill(2), min_arg.zfill(2), int(amount_arg), start_date_str
 
@@ -326,7 +326,8 @@ def view_schedule(clean_data: dict) -> list[tuple]:
             return []
         else:
             # Sort by Time
-            temp_rows = sorted(all_schedules, key=lambda x: x[0], reverse=True)
+            temp_rows = sorted(
+                all_schedules, key=lambda x: x[0], reverse=False)
             rows = sorted(temp_rows, key=lambda x: x[1])
 
             for row in rows:

@@ -151,7 +151,7 @@ def input_device_nums_action(feeders_map: dict):
             f"  - Would you like to set a device nickname? Y/N: ").strip().lower()
         if continue_nickname not in ["no", "n", "exit", "x", "quit", "q"]:
             input_nickname: str = input(
-                f"  - Enter new friendly device nickname, recommended 6 chars or fewer (e.g. 'Living'): ").strip().lower()
+                f"  - Enter new friendly device nickname, recommended 6 chars or fewer (e.g. 'Living'): ").strip()
             if input_nickname in ["x", "exit"]:
                 print(f"Exiting program.")
                 exit()
