@@ -1,5 +1,9 @@
 # What this library does
-For users of PetSafe feeders, this library enables you to **schedule feedings starting *from* a date *to* a date**. It's really useful for trips: saving you from needing to remember to set a new scheduled feed when your trip starts, and then *again* you'll need to remember to cancel it. Well remember no more: with this library, you can pre-set a start and end date!
+If you have PetSafe feeders, this library enables you to
+1. schedule feedings starting ***from*** a date to a date
+1. schedule feedings for ***multiple feeders*** simultaneously (and with different amounts!)
+
+It's really useful for trips: saving you from needing to remember to set a new scheduled feed when your trip starts, and then *again* you'll need to remember to cancel it. Well remember no more: with this library, you can pre-set a start and end date!
 
 This code uses Techzune's PetSafe smartfeed library (https://github.com/Techzune/petsafe_smartfeed) to surface hooks to interact with the PetSafe API.
 
