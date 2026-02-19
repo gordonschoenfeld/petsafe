@@ -108,8 +108,7 @@ def convert_date_to_day(date_str) -> str:
     return day_abbr
 
 
-def view_schedule(clean_data: dict) -> list[tuple]:
-
+def view_schedule(clean_data: dict, header_text: str = None) -> list[tuple]:
     # --- FETCH CRON SCHEDULES ---
     def get_cron_lines() -> list:
         """Fetches the raw crontab output."""
@@ -313,9 +312,16 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
         all_schedules = formatted_schedules
 
+        # --- If optional header supplied, print it on top ---
+        print("")
+        if header_text:
+            print(header_text)
+            print("")
+        # ----------------------------------------------------
+
         # Print Header
         w_name, w_time, w_amount, w_type = 6, 5, 5, 15
-        print("")
+
         print(
             f"{'Feeder':<{w_name}} | {'Time':<{w_time}} | {'Amt.':<{w_amount}} | {'Note':<{w_type}}")
         print("-" * (w_name + w_time + w_amount + w_type + 1))
@@ -342,5 +348,6 @@ def view_schedule(clean_data: dict) -> list[tuple]:
 
 
 if __name__ == "__main__":
+    optional_header = sys.argv[1] if len(sys.argv) > 1 else None
     clean_data = fetch_feeder_info()
-    view_schedule(clean_data)
+    view_schedule(clean_data, header_text=optional_header)
