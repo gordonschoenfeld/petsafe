@@ -345,9 +345,9 @@ def compute_date_diff(date1: tuple | str, date2: tuple | str) -> int | None:
 
 
 # -- 👀 VIEW SCHEDULE FUNCTION --
-def view_schedule(clean_data: dict) -> list[tuple]:
+def view_schedule(clean_data: dict, header_text: str = None) -> list[tuple]:
     from view_schedule import view_schedule
-    return view_schedule(clean_data)
+    return view_schedule(clean_data, header_text)
 
 
 # -- ➕ ADD SCHEDULE FUNCTION --
@@ -653,7 +653,8 @@ def task_input() -> None:
     if action in ['add', 'a']:
         # declare independent vars
         clean_data: dict = fetch_feeder_info()
-        all_schedules: list[tuple] = view_schedule(clean_data)
+        all_schedules: list[tuple] = view_schedule(
+            clean_data, "Current scheduled feedings:")
         today = (datetime.now().strftime('%m'),
                  datetime.now().strftime('%d'))
 
@@ -713,19 +714,18 @@ def task_input() -> None:
 
         # 4. Show new schedules
         clean_data: dict = fetch_feeder_info()
-        print(f"Updated schedules:")
         if clean_data:
-            view_schedule(clean_data)
+            view_schedule(clean_data, "Updated scheduled feedings:")
 
     # INPUT: REMOVE ACTION
     elif action in ['remove', 'r', 'rm', 'd', 'del', 'delete']:
         # Print current schedules, for user reference
-        print("Current schedules:")
         clean_data: dict = fetch_feeder_info()
         if not clean_data:
             return
 
-        all_schedules: list[tuple] = view_schedule(clean_data)
+        all_schedules: list[tuple] = view_schedule(
+            clean_data, "Current scheduled feedings:")
 
         # Prompt for machine & time to remove
         hour, minute = get_time()
@@ -740,8 +740,7 @@ def task_input() -> None:
                             clean_data, all_schedules)
 
         # Show new schedules
-        print(f"Updated schedules:")
-        view_schedule(clean_data)
+        view_schedule(clean_data, "Updated scheduled feedings:")
 
     # INPUT: VIEW ACTION
     elif action in ['view', 'v', 'list', 'show']:
