@@ -9,6 +9,8 @@ This code uses Techzune's PetSafe smartfeed library (https://github.com/Techzune
 
 
 # Setup instructions
+This setup should take 5–10 minutes.
+
 ## 1. Prerequisites
 
 ### Set up your PetSafe feeder(s) and app
@@ -54,15 +56,32 @@ Example resulting `config/feeders_config.json` config file:
 }
 ```
 
-## 4. Ready!
-To use the features, **run in terminal: `python3 petsafe_main.py`**, then follow the prompts in the console.
-
-# FAQ
-## What if I add/remove/rename feeders, or want to change ?
-Run in terminal: `python3 setup_wizard.py`, then follow the prompts in the console. It will ask for your confirmation for overwriting the existing settings file.
-
-# Copyright
+## 4. (Optional) Set up iOS/macOS Shortcuts
 TODO
 
+## 5. Ready!
+To use this program, **run in terminal: `python3 petsafe_main.py`**, then follow the prompts in the console. If you've set up Shortcuts, you can also run the shortcut called "PetSafe" to get the same functionality.
+
 # Limitations
+* Your computer (or server) must be on and connected to the internet at feeding time.
+  * This library works by setting Cron jobs on your computer. When one of these Cron jobs triggers, it sends a one-off request to "feed now". Therefore, if at the moment of the Cron job triggering (i.e. feeding time), if there is no connection, the feeding will not take place and will not try again that day. It will, however, try to trigger again the next day if possible.
+  * Because of this, running this on an always-on server (e.g. Raspberry Pi) is strongly recommended.
+* Feedings scheduled through this library cannot be seen or edited from the PetSafe app.
+* Feedings scheduled through the PetSafe app cannot be edited from this library. (They can, however, be viewed).
+
+# FAQ
+## What if I add/remove/rename feeders, or want to change the default amounts?
+Run in terminal: `python3 setup_wizard.py`, then follow the prompts in the console. It will ask for your confirmation for overwriting the existing settings file. Or, you can directly edit `config/feeders_config.json`.
+
+**WARNING**: Any changes to ID numbers for your devices will break existing scheduled tasks (current for future). I recommend that you first remove all tasks before making any changes to `config/feeders_config.json`, then re-add them.
+
+## Can I use this program to interact with scheduled feeds that were set in the PetSafe app?
+Unfortunately, no. Due to limitations in [Techzune's PetSafe smartfeed library](https://github.com/Techzune/petsafe_smartfeed), the app-scheduled feeds are readable, but not actually editable or overwritable.
+
+As a workaround, this library includes app-scheduled feeds when viewing (for context), but produces user-friendly errors if the user tries to edit or remove one of them.
+
+## Why aren't my scheduled feedings actually triggering?
+See the Limitations section, above.
+
+# Copyright
 TODO
