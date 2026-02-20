@@ -13,7 +13,7 @@ client = renew_tokens.refresh_disk_tokens()
 
 # 2. Load feeder names (static data)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-INFO_FILE = os.path.join(SCRIPT_DIR, "feeders_general_info.json")
+INFO_FILE = os.path.join(SCRIPT_DIR, "feeders_config.json")
 
 try:
     with open(INFO_FILE, "r") as f:
