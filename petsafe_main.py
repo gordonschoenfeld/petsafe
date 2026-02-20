@@ -28,6 +28,7 @@ def initialize_resources():
     except FileNotFoundError:
         print(
             "ERROR: 'config/tokens_petsafe.json' not found. Please run setup_auth.py first.")
+        print("       Did you remember to cd into the correct directory (e.g. petsafe/)?")
         exit()
 
     # Initialize client (The slow part: Network connection)
