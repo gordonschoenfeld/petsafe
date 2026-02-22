@@ -1,7 +1,6 @@
 from pathlib import Path
 
-# Path(__file__) gets the current file location
-# .resolve() turns it into an absolute/full path
-full_path = Path(__file__).resolve()
+# .resolve() ensures it's the full path, .parent removes the filename
+script_dir = Path(__file__).resolve().parent
 
-print(full_path)
+print(script_dir)

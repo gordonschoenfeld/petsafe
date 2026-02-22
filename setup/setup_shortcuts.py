@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import itertools
 import sys
 import threading
@@ -78,7 +80,7 @@ finally:
     t.join()
 
 input(f"Once you have accepted all 6 Shortcut installations, press RETURN/ENTER to continue.")
-# TODO: pull it and write it into iCloud?!?
+# TODO: pull filepath and write it into iCloud?!?
 #       - plan B: Guide through the establishing the filepath
 
 # -- Print footers --
