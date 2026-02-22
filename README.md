@@ -17,13 +17,15 @@ This setup should take 5–10 minutes.
 If you haven't done so already, you should use the official PetSafe channels to set up your account on PetSafe, and connect your feeders to it.
 
 ### Upgrade to at least Python 3.6+
-Ensure that your python version is at least 3.6. 
+Ensure that your device's Python version is at least 3.6. 
 * In terminal: `python3 --version`
 
 If your Python version is below 3.6:
 * Go to [python.org/downloads](https://www.python.org/downloads), and download and install the latest version of Python from there.
 
 ## 2. Create directory for this library
+* Access the Unix-based device (e.g. Mac, Raspberry Pi) that these functions will run off of. SSH into it if necessary.
+
 * In terminal: 
 ```
 mkdir petsafe
@@ -70,6 +72,9 @@ To use this program, **run in terminal: `python3 petsafe_main.py`**, then follow
 * Feedings scheduled through the PetSafe app cannot be edited from this library. (They can, however, be viewed).
 
 # FAQ
+## What OSs are supported?
+Unix-based OSs, including macOS, Linux, and Raspberry Pi. All scheduling functions are built in Crontab, which Windows does not support.
+
 ## What if I add/remove/rename feeders, or want to change the default amounts?
 Run in terminal: `python3 setup_wizard.py`, then follow the prompts in the console. It will ask for your confirmation for overwriting the existing settings file. Or, you can directly edit `config/feeders_config.json`.
 
