@@ -96,7 +96,7 @@ def input_device_nums_action(feeders_map: dict):
         new_default_amount = input(
             f"  - Enter new default feed amount, in ⅛-cup units: ").strip()
         # Case: escape
-        if new_default_amount in ["x", "exit"]:
+        if new_default_amount in ["x", "exit", "q", "quit"]:
             print(f"Exiting program.")
             exit()
         # Case: bad input ==> go back
