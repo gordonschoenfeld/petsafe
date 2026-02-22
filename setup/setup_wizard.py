@@ -5,9 +5,8 @@ import subprocess
 import sys
 
 
-# Check OS
+# Check OS; stop if not Unix-based
 if os.name != 'posix':
-    # sys.exit() is cleaner than raising a raw Exception for end-users
     sys.exit(
         f"FATAL ERROR: This script requires a Unix-based OS (including macOS and Raspberry Pi). Detected: {os.name})")
 
