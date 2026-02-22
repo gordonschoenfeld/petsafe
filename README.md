@@ -1,7 +1,7 @@
 # What this library does
 If you have PetSafe feeders, this library enables you to
-1. schedule feedings starting ***from*** a date to a date
-1. schedule feedings for ***multiple feeders*** simultaneously (and with different amounts!)
+1. securely schedule feedings starting ***from*** a date to a date
+1. securely schedule feedings for ***multiple feeders*** simultaneously (and with different amounts!)
 
 It's really useful for trips: saving you from needing to remember to set a new scheduled feed when your trip starts, and then *again* you'll need to remember to cancel it. Well remember no more: with this library, you can pre-set a start and end date!
 
@@ -23,9 +23,12 @@ Ensure that your device's Python version is at least 3.6.
 If your Python version is below 3.6:
 * Go to [python.org/downloads](https://www.python.org/downloads), and download and install the latest version of Python from there.
 
+### (Required for Shortcuts usage) Set up SSH into your server
+See guide here: https://www.digitalocean.com/community/tutorials/how-to-use-ssh-to-connect-to-a-remote-server
+
+
 ## 2. Create directory for this library
 * Access the Unix-based device (e.g. Mac, Raspberry Pi) that these functions will run off of. SSH into it if necessary.
-
 * In terminal: 
 ```
 mkdir petsafe
@@ -58,22 +61,25 @@ Example resulting `config/feeders_config.json` config file:
 }
 ```
 
-## 4. (Optional) Set up iOS/macOS Shortcuts
-TODO
-
-## 5. Ready!
-To use this program, **run in terminal: `python3 petsafe_main.py`**, then follow the prompts in the console. If you've set up Shortcuts, you can also run the shortcut called "PetSafe" to get the same functionality.
+## 4. Ready!
+To use this program, **run in terminal: `python3 petsafe_main.py`**, then follow the prompts in the console. Or, if you've set up Shortcuts, you can also run the shortcut called "PetSafe" to get the same functionalities.
 
 # Limitations
-* Your computer (or server) must be on and connected to the internet at feeding time.
+* Your have a Unix-based server. This includes Mac, Linux, and Raspberry Pi. Windows is not supported.
+* Your server must be on and connected to the internet at feeding time.
   * This library works by setting Cron jobs on your computer. When one of these Cron jobs triggers, it sends a one-off request to "feed now". Therefore, if at the moment of the Cron job triggering (i.e. feeding time), if there is no connection, the feeding will not take place and will not try again that day. It will, however, try to trigger again the next day if possible.
   * Because of this, running this on an always-on server (e.g. Raspberry Pi) is strongly recommended.
 * Feedings scheduled through this library cannot be seen or edited from the PetSafe app.
 * Feedings scheduled through the PetSafe app cannot be edited from this library. (They can, however, be viewed).
 
 # FAQ
-## What OSs are supported?
-Unix-based OSs, including macOS, Linux, and Raspberry Pi. All scheduling functions are built in Crontab, which Windows does not support.
+## What OSs are supported, and why?
+Unix-based OSs (including macOS, Linux, and Raspberry Pi) are supported. All scheduling functions are built in Crontab, which is Unix-specific.
+
+## Is this secure?
+It's more secure than your PetSafe app is:
+* Scheduled feeding information is stored only on your server, then at feeding time, your server sends a one-off request to PetSafe directly to "feed now". No data goes to a 3rd party.
+* Config files (with feeder names, feeding times, and SSH login data) live on your local machine, not on PetSafe's servers.
 
 ## What if I add/remove/rename feeders, or want to change the default amounts?
 Run in terminal: `python3 setup_wizard.py`, then follow the prompts in the console. It will ask for your confirmation for overwriting the existing settings file. Or, you can directly edit `config/feeders_config.json`.
