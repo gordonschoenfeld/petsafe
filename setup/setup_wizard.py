@@ -16,3 +16,6 @@ subprocess.run(["python3", "setup/setup_auth.py"])
 
 # Run setup_feeders_map.py
 subprocess.run(["python3", "setup/setup_feeders_map.py"])
+
+# Run setup_shortcuts.py
+subprocess.run(["python3", "setup/setup_shortcuts.py"])
