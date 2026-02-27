@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import itertools
+import json
 import os
 import sys
 import threading
@@ -64,11 +65,11 @@ t.start()
 try:
     # Run installs
     shortcut_links = [
-        "https://www.icloud.com/shortcuts/0cf5f0c06f6d4f7f8e8d59c2fd705e0a",    # PetSafe
-        "https://www.icloud.com/shortcuts/5fe0d58baaf1432d870a2438e8bbca27",    # Add
-        "https://www.icloud.com/shortcuts/cdf087d017884c0c9aafea22fbb42bae",    # Remove
-        "https://www.icloud.com/shortcuts/3b83f601cf54496dab14d93579ae4eb3",    # View
-        "***REDACTED***",    # Remove Matches
+        # "https://www.icloud.com/shortcuts/0cf5f0c06f6d4f7f8e8d59c2fd705e0a",    # PetSafe main
+        # "https://www.icloud.com/shortcuts/5fe0d58baaf1432d870a2438e8bbca27",    # Add
+        # "https://www.icloud.com/shortcuts/cdf087d017884c0c9aafea22fbb42bae",    # Remove
+        # "https://www.icloud.com/shortcuts/3b83f601cf54496dab14d93579ae4eb3",    # View
+        # "***REDACTED***",    # Remove Matches
         "https://www.icloud.com/shortcuts/fe111f50a001470d822d94096520908e"     # Find Matches
     ]
     for link in shortcut_links:
@@ -86,9 +87,9 @@ input(f"Once you have accepted all 6 Shortcut installations, press RETURN/ENTER 
 # -- SET UP SHORTCUTS CONFIG FILE --
 print(f"")
 print(f"SHORTCUTS CONFIG FILE SETUP")
-print(f"  Configuring parameters for Shortcuts to talk to your server.")
-print(f"  Your SSH security key/password will NOT be requested.")
-print(f"  Enter your SSH login credentials...")
+print(f"  ℹ️  Configuring parameters file for Shortcuts to talk to your server.")
+print(f"  🔐 Your SSH secret info will NOT be requested.")
+print(f"  Enter basic SSH info...")
 
 
 def get_host() -> str:
@@ -121,9 +122,9 @@ def get_user() -> str:
     return user
 
 
-host = get_host()
-port = get_port()
-user = get_user()
+host = get_host().strip()
+port = get_port().strip()
+user = get_user().strip()
 
 
 # Get filepath of this script
@@ -137,19 +138,21 @@ icloud_shortcuts_dir = os.path.expanduser(
 # Create the directory if it somehow doesn't exist
 os.makedirs(icloud_shortcuts_dir, exist_ok=True)
 
-
 # Assemble all info going into file
-info_dict = {"home_dir": home_dir_str,
-             "ssh_host": host,
-             "ssh_port": port,
-             "ssh_user": user}
+info_dict = {
+    "home_dir": home_dir_str,
+    "ssh_host": host,
+    "ssh_port": port,
+    "ssh_user": user
+}
 
-# Write and save the file
+# Write and save the file (Note: You can safely change .txt to .json if you prefer)
 write_file_path = os.path.join(
     icloud_shortcuts_dir, "petsafe_shortcut_config.txt")
 
 with open(write_file_path, "w") as f:
-    f.write(str(info_dict))
+    # json.dumps converts the dictionary to a string with double quotes
+    f.write(json.dumps(info_dict, indent=4))
 
 # -- WRAP UP FILE SETUP --
 print(f"✅ Success: Directory path saved to Shortcuts iCloud folder. Shortcuts will access it at:")
@@ -159,7 +162,7 @@ print(f"{write_file_path}")
 # -- GIVE INSTRUCTIONS TO WALK THROUGH SHORTCUTS SETUP --
 # TODO: print inx (expect one-time pop-ups, etc.)
 # TODO: Action needed within Shortcuts? Copy-paste for SSH keys?? Stress that this is for your security.
-#       Ask Gemini to list what user needs to do.
+#       @GORDON: Ask Gemini to list what user needs to do, giving it this file as reference.
 
 
 # -- Print footers --
