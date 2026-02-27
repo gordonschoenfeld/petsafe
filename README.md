@@ -23,22 +23,41 @@ Ensure that your device's Python version is at least 3.6.
 If your Python version is below 3.6:
 * Go to [python.org/downloads](https://www.python.org/downloads), and download and install the latest version of Python from there.
 
+### pip is installed
+!!!!!!TODO: install pip
+`sudo python3 -m ensurepip --upgrade`
+
+
+### (For Macs) Cron is explicitly enabled
+Apple considers Cron deprecated, but still possible to enable. To enable it:
+1. MacOS 'System Preferences' -> 'Security & Privacy' -> (menu-pick on left side) 'Full Disk Access' panel
+1. Once there, locate the 'cron' program in the file-system using the Finder (must use the pull-down menu 'Go' -> 'Go to folder ...' feature to get to it
+1. Drag and drop the 'cron' program (again, located at the system file-path of '/usr/sbin/cron') into the list of programs on the 'System Preferences' panel opened already
+1. Make sure the little check-box is checked to enable to the program
+
 ### (Required for Shortcuts usage) Set up SSH into your server
 See guide here: https://www.digitalocean.com/community/tutorials/how-to-use-ssh-to-connect-to-a-remote-server
 
 
-## 2. Create directory for this library
+
+
+## 2. Clone this repo to your machine
 * Access the Unix-based device (e.g. Mac, Raspberry Pi) that these functions will run off of. SSH into it if necessary.
-* In terminal: 
+* In terminal:
 ```
-mkdir petsafe
-cd petsafe
+cd <YOUR/PREFERRED/PARENT/FOLDER/PATH>
+git clone https://github.com/gordonschoenfeld/petsafe
 ```
+If asked, enter your github credentials.
 
 ## 3. Run wizard, to establish your connection and get a key from PetSafe
+
 ### Install connectivity library
-* In terminal: `pip install petsafe-smartfeed --target /api`
-* In terminal: `python3 setup.py api/install`
+* In terminal:
+```
+pip3 install petsafe-smartfeed --target /api
+python3 setup/setup_wizard.py api/install
+```
 
 ### Retrieve tokens and establish config settings file
 * In terminal, run: `python3 setup_auth.py`, then follow the prompts in the console.
