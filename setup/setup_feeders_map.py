@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # ABOUT
-# This script establishes a simple json config of feeders, names and user preferences.
+# This script establishes a simple json config of feeders, names, and user preferences.
 # They will be written into /config/feeders_config.json.
 
 import json
@@ -197,6 +197,11 @@ def main():
     print(f"=" * width)
     print(f"|" + message.center(width-2) + "|")
     print(f"." * width)
+
+    # -- Explain module --
+    print(f"ℹ️ Establishing a simple json config of feeders, names, and user preferences.")
+    print(f"ℹ️ They will be written into /config/feeders_config.json.")
+    print(f"")
 
     # -- Get tokens --
     token: dict = fetch_tokens_from_file()
