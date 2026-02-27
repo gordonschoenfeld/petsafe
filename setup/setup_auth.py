@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # ABOUT
-# This script initially establishes auth from PetSafe, for interaction with their API.
+# This script establishes auth from PetSafe, for interaction with their API.
 # It writes them into /config/tokens_petsafe.json.
 
 import json
@@ -16,8 +16,17 @@ print(f"=" * width)
 print(f"|" + message.center(width-2) + "|")
 print(f"." * width)
 
+# 0. Explain module
+print(f"ℹ️ Establishing authorization from PetSafe, for interaction with their API.")
+print(f"ℹ️ It writes them into /config/tokens_petsafe.json.")
+print(f"")
+
 # 1. Define email
-email: str = input("Your email address associated with PetSafe: ")
+email: str = input("Your email address associated with PetSafe: ").strip()
+# escape hatch
+if email.lower() in ["x", "exit", "q", "quit"]:
+    print(f"Exiting program.")
+    exit()
 
 # 2. Initialize client and request a code
 print(f"Requesting access code for {email}...")
@@ -25,7 +34,7 @@ client = sf.PetSafeClient(email=email)
 client.request_code()
 
 # 3. User inputs the code received in email
-code = input("Enter the code sent to your email: ")
+code = input("Enter the code sent to your email: ").strip()
 
 # 4. Exchange code for tokens
 client.request_tokens_from_code(code=code)

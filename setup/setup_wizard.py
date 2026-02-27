@@ -10,7 +10,7 @@ if os.name != 'posix':
     sys.exit(
         f"FATAL ERROR: This script requires a Unix-based OS (including macOS and Raspberry Pi). Detected: {os.name})")
 
-# Check for pip; install
+# Check for pip; install if not present.
 import sys
 import subprocess
 

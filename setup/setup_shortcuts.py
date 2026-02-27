@@ -34,7 +34,7 @@ print(f"|" + message.center(width-2) + "|")
 print(f"." * width)
 
 # -- PROMPT TO PROCEED OR SKIP --
-print(f"If you want, you can also install UI/Siri capability via Apple Shortcuts.")
+print(f"ℹ️ If you want, you can also install easy UI and Siri capabilities via Apple Shortcuts.")
 
 opt = input(
     f"  - Proceed with setting up Apple Shortcuts? Y/N: ").strip().lower()
