@@ -144,15 +144,23 @@ info_dict = {"home_dir": home_dir_str,
              "ssh_port": port,
              "ssh_user": user}
 
-# 3. Write and save the file
+# Write and save the file
 write_file_path = os.path.join(
-    icloud_shortcuts_dir, "petsafe_server_filepath.txt")
+    icloud_shortcuts_dir, "petsafe_shortcut_config.txt")
 
 with open(write_file_path, "w") as f:
     f.write(str(info_dict))
 
+# -- WRAP UP FILE SETUP --
 print(f"✅ Success: Directory path saved to Shortcuts iCloud folder. Shortcuts will access it at:")
 print(f"{write_file_path}")
+
+
+# -- GIVE INSTRUCTIONS TO WALK THROUGH SHORTCUTS SETUP --
+# TODO: print inx (expect one-time pop-ups, etc.)
+# TODO: Action needed within Shortcuts? Copy-paste for SSH keys?? Stress that this is for your security.
+#       Ask Gemini to list what user needs to do.
+
 
 # -- Print footers --
 width = 36
