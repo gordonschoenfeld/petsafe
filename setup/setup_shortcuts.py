@@ -65,11 +65,11 @@ t.start()
 try:
     # Run installs
     shortcut_links = [
-        # "https://www.icloud.com/shortcuts/0cf5f0c06f6d4f7f8e8d59c2fd705e0a",    # PetSafe main
-        # "https://www.icloud.com/shortcuts/5fe0d58baaf1432d870a2438e8bbca27",    # Add
-        # "https://www.icloud.com/shortcuts/cdf087d017884c0c9aafea22fbb42bae",    # Remove
-        # "https://www.icloud.com/shortcuts/3b83f601cf54496dab14d93579ae4eb3",    # View
-        # "***REDACTED***",    # Remove Matches
+        "https://www.icloud.com/shortcuts/0cf5f0c06f6d4f7f8e8d59c2fd705e0a",    # PetSafe main
+        "https://www.icloud.com/shortcuts/5fe0d58baaf1432d870a2438e8bbca27",    # Add
+        "https://www.icloud.com/shortcuts/cdf087d017884c0c9aafea22fbb42bae",    # Remove
+        "https://www.icloud.com/shortcuts/3b83f601cf54496dab14d93579ae4eb3",    # View
+        "***REDACTED***",    # Remove Matches
         "https://www.icloud.com/shortcuts/fe111f50a001470d822d94096520908e"     # Find Matches
     ]
     for link in shortcut_links:
@@ -88,13 +88,13 @@ input(f"Once you have accepted all 6 Shortcut installations, press RETURN/ENTER 
 print(f"")
 print(f"SHORTCUTS CONFIG FILE SETUP")
 print(f"  ℹ️  Configuring parameters file for Shortcuts to talk to your server.")
-print(f"  🔐 Your SSH secret info will NOT be requested.")
+print(f"  🔐 Your SSH password or key will NOT be requested.")
 print(f"  Enter basic SSH info...")
 
 
 def get_host() -> str:
     host: str = input(
-        f"  - Enter SSH host URL (e.g. myinstance.ydns.eu): ").strip().lower()
+        f"  - Enter SSH host URL (e.g. 192.168.1.100 or myinstance.ydns.eu): ").strip().lower()
     if host == "":
         print(f"    ERROR: Host cannot be blank.")
         return get_host()
@@ -103,7 +103,7 @@ def get_host() -> str:
 
 def get_port() -> str:
     port: str = input(
-        f"  - Enter SSH port (e.g. 22)                    : ").strip()
+        f"  - Enter SSH port (e.g. 22)                                     : ").strip()
     if port.isnumeric() is False:
         print(f"    ERROR: Port must be a number.")
         return get_port()
@@ -115,7 +115,7 @@ def get_port() -> str:
 
 def get_user() -> str:
     user: str = input(
-        f"  - Enter SSH username                          : ").strip().lower()
+        f"  - Enter SSH username (e.g. root)                               : ").strip().lower()
     if user == "":
         print(f"    ERROR: Username cannot be blank.")
         return get_user()
@@ -160,10 +160,34 @@ print(f"{write_file_path}")
 
 
 # -- GIVE INSTRUCTIONS TO WALK THROUGH SHORTCUTS SETUP --
-# TODO: print inx (expect one-time pop-ups, etc.)
-# TODO: Action needed within Shortcuts? Copy-paste for SSH keys?? Stress that this is for your security.
-#       @GORDON: Ask Gemini to list what user needs to do, giving it this file as reference.
-
+print(f"")
+print(f"NEXT STEPS FOR SHORTCUTS (also viewable in README.md):")
+print(f"To finish setup, you must manually complete a few steps on your Apple device.")
+print(f"This is required by Apple for your security and cannot be automated.")
+print(f"1. Enable Scripting:")
+print(f"   - On Mac: Open Shortcuts > Settings > Advanced > check 'Allow Running Scripts'")
+print(f"   - On iOS: Open Settings app > Apps > Shortcuts > Advanced > enable 'Allow Running Scripts'")
+print(f"2. Add SSH Credentials in the Shortcuts App:")
+print(f"   - Open the Shortcuts app and edit the shortcuts.")
+print(f"   - Scroll down to the 'Run script over SSH' action.")
+print(f"   - Expand the action and under 'Authentication', choose 'SSH Key' (default) or 'Password'.")
+print(f"   - If you use a password to SSH into your device:")
+print(f"     - In each black-and-white 'Run Scripts Over SSH' module in shortcuts, change Authentication to 'Password':")
+print(f"       'Petsafe View' shortcut            | 1 instance")
+print(f"       'Petsafe Remove' shortcut          | 1 instance")
+print(f"       'Petsafe Remove Matches' shortcut  | 3 instances")
+print(f"       'Petsafe Add' shortcut             | 8 instances")
+print(f"     - Enter your password directly into the new Password field.")
+print(f"   - If you use an SSH key:")
+print(f"     - See README.md for more details.")
+print(f"   - 🔐 We do not ask for your password or SSH key so it stays securely on your device.")
+print(f"3. Grant First-Run Permissions:")
+print(f"   - Run the 'PetSafe' shortcut for the first time.")
+print(f"   - As you go through the prompts, you will see several one-time security pop-ups:")
+print(f"     * 'Allow PetSafe to run another shortcut?' -> click 'Allow'")
+print(f"     * 'Allow PetSafe to use 1 text item in an SSH script...' -> click 'Always Allow'")
+print(f"")
+input(f"Press RETURN/ENTER to acknowledge and continue.")
 
 # -- Print footers --
 width = 36
