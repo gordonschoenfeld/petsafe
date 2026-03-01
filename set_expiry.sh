@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Copyright (c) 2026 Gordon Schoenfeld
+# Licensed under the MIT License.
+# See LICENSE file in the project root for full license information.
+
 # --- ARGUMENT PARSING ---
 if [ "$#" -ne 6 ]; then
     echo "Usage: $0 <expiry_month> <expiry_day> <target_hour> <target_min> <feeder_num> <amount>"

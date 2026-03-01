@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Copyright (c) 2026 Gordon Schoenfeld
+# Licensed under the MIT License.
+# See LICENSE file in the project root for full license information.
+
 # ABOUT
 # This script keeps the server's code up to date.
 # This script runs a `git pull`.

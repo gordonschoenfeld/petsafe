@@ -1,3 +1,9 @@
+<!-- 
+# Copyright (c) 2026 Gordon Schoenfeld
+# Licensed under the MIT License.
+# See LICENSE file in the project root for full license information.
+-->
+
 # What this library does
 If you have PetSafe feeders, this library enables you to
 1. securely schedule feedings starting ***from*** a date ***to*** a date
@@ -79,13 +85,34 @@ Example resulting `config/feeders_config.json` config file:
 ```
 
 
-## 3. (If using Apple Shortcuts) Initialize Shortcuts app
-* [One-time] Grant app permissions to run scripts
+## 3. (If using Apple Shortcuts) Initialize Shortcuts app (one-time)
+* Grant app permissions to run scripts
   * (On Mac) Shortcuts > Settings > Advanced > Allow Running Scripts
   * (On iOS) iOS Settings app > Apps > Shortcuts > Advanced > Allow Running Scripts
 
-* [One-time] Grant each shortcut to run other shortcuts
-  * The first time you run each shortcut, you will be asked for permission to run other shortcuts. When you get a prompt like: `Allow XYZ to run another shortcut?` ==> click Allow.
+* Add SSH credentials in the Shortcuts App
+  * Open the Shortcuts app and edit the main 'PetSafe' shortcut
+  * Scroll down to each 'Run script over SSH' action
+  * 🔐 We do not ask for your password or SSH key in this script so it stays securely on your device
+  * Expand the action and under 'Authentication', choose 'SSH Key' or 'Password'
+    * If you use a password to SSH into your device:
+      * In each black-and-white 'Run Scripts Over SSH' module in shortcuts, change Authentication to 'Password':
+        * 1 instance: "PetSafe View" shortcut
+        * 4 instance: "PetSafe Remove" shortcut
+        * 8 instances: "PetSafe Add" shortcut
+      * Enter your password directly into the new Password field.
+    * If you use an SSH key:
+      * Click on the Authentication field and change it from "Password" to SSH Key.
+      * A new row will appear below it, typically labeled something like SSH Key: ed25519 Key (or RSA). Click on that key label.
+      * A menu will pop up. Click Copy Public Key. (Note: Never share or copy the Private Key. You only need the Public Key for the server).
+      * SSH into your device, if applicable.
+      * In terminal: `mkdir -p ~/.ssh ; touch ~/.ssh/authorized_keys ; nano ~/.ssh/authorized_keys`
+    * Paste the public key you copied from Shortcuts on a new line. It should look like a single, long string starting with ssh-ed25519 or ssh-rsa.
+    * Save and exit (COMMAND+O, Enter, COMMAND+X).
+    * Lock down file permissions. In terminal: `chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys`
+* Grant first-run shortcut permissions
+  * The first time you run each shortcut, you will be asked for permission to run other shortcuts. When you get a prompt like: *Allow "PetSafe XYZ" to run another shortcut?* ==> click Allow.
+  * The first time you run certain scenarios, you will be asked for permission for the app to read from your SSH config file to make SSH calls. When you get a prompt like *Allow "PetSafe XYZ" to use 1 text item in an SSH script on URL/IP?* ==> click Always Allow.
 
 
 
@@ -132,4 +159,6 @@ See the Limitations section, above.
 
 
 # Copyright
-TODO
+Copyright (c) 2026 Gordon Schoenfeld
+
+Licensed under the MIT License. See LICENSE file in the project root for full license information.

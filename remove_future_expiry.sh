@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Copyright (c) 2026 Gordon Schoenfeld
+# Licensed under the MIT License.
+# See LICENSE file in the project root for full license information.
+
 # --- ARGUMENT CHECK ---
 if [ "$#" -ne 3 ]; then
     echo "Usage: $0 <FEEDER_NUM> <HOUR> <MINUTE>"

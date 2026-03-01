@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# Copyright (c) 2026 Gordon Schoenfeld
+# Licensed under the MIT License.
+# See LICENSE file in the project root for full license information.
+
 import re
 import json
 import renew_tokens               # Keep this here, even if not called.
@@ -56,7 +60,7 @@ def fetch_feeder_info() -> dict:
 
         # 1. Build a dynamic lookup map from your loaded config
         #    Maps the real ID (int) -> Your Custom Key (str)
-        #    Example: {***REDACTED***: "5", ***REDACTED***: "6"}
+        #    Example: {***REMOVED***: "5", ***REMOVED***: "6"}
         id_to_key_map = {}
         for key, data in feeders_list.items():
             if "id" in data:
