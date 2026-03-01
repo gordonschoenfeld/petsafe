@@ -54,8 +54,8 @@ if opt in ["x", "exit", "n", "no", "quit", "q"]:
 
 # -- INTRO TEXT, PAUSE BEFORE INSTALL --
 print(f"Installing Shortcuts from iCloud.")
-print(f"You will be presented with 6 (six) pop-ups.")
-print(f"For each one, click the pop-up's \"Add Shortcut\" button.")
+print(f"You will be presented with 5 (five) pop-ups: one for each component Shortcut.")
+print(f"For each one, click the pop-up's \"Add Shortcut\" button. You need all 5.")
 input(f"Press RETURN/ENTER to continue.")
 
 # Show install requests dialog (animated)
@@ -69,12 +69,11 @@ try:
         "https://www.icloud.com/shortcuts/5fe0d58baaf1432d870a2438e8bbca27",    # Add
         "https://www.icloud.com/shortcuts/cdf087d017884c0c9aafea22fbb42bae",    # Remove
         "https://www.icloud.com/shortcuts/3b83f601cf54496dab14d93579ae4eb3",    # View
-        "***REDACTED***",    # Remove Matches
         "https://www.icloud.com/shortcuts/fe111f50a001470d822d94096520908e"     # Find Matches
     ]
     for link in shortcut_links:
         webbrowser.open(link)
-        # Small delay to prevent the OS from choking on 6 rapid requests
+        # Small delay to prevent the OS from choking on 5 rapid requests
         time.sleep(1)
 
 finally:
@@ -82,7 +81,7 @@ finally:
     fetch_done = True
     t.join()
 
-input(f"Once you have accepted all 6 Shortcut installations, press RETURN/ENTER to continue.")
+input(f"Once you have accepted all 5 Shortcut installations, press RETURN/ENTER to continue.")
 
 # -- SET UP SHORTCUTS CONFIG FILE --
 print(f"")
@@ -171,14 +170,13 @@ print(f"2. Add SSH Credentials in the Shortcuts App:")
 print(f"   - Open the Shortcuts app and edit the shortcuts.")
 print(f"   - Scroll down to the 'Run script over SSH' action.")
 print(f"   - Expand the action and under 'Authentication', choose 'SSH Key' (default) or 'Password'.")
-print(f"   - If you use a password to SSH into your device:")
+print(f"   - If you use a *PASSWORD* to SSH into your device:")
 print(f"     - In each black-and-white 'Run Scripts Over SSH' module in shortcuts, change Authentication to 'Password':")
 print(f"       'Petsafe View' shortcut            | 1 instance")
-print(f"       'Petsafe Remove' shortcut          | 1 instance")
-print(f"       'Petsafe Remove Matches' shortcut  | 3 instances")
+print(f"       'Petsafe Remove' shortcut          | 4 instance")
 print(f"       'Petsafe Add' shortcut             | 8 instances")
 print(f"     - Enter your password directly into the new Password field.")
-print(f"   - If you use an SSH key:")
+print(f"   - If you use an *SSH KEY* to SSH into your device:")
 print(f"     - See README.md for more details.")
 print(f"   - 🔐 We do not ask for your password or SSH key so it stays securely on your device.")
 print(f"3. Grant First-Run Permissions:")

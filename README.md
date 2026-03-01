@@ -92,8 +92,7 @@ Example resulting `config/feeders_config.json` config file:
     * If you use a password to SSH into your device:
       * In each black-and-white 'Run Scripts Over SSH' module in shortcuts, change Authentication to 'Password':
         * 1 instance: "PetSafe View" shortcut
-        * 1 instance: "PetSafe Remove" shortcut
-        * 3 instances: "PetSafe Remove Matches" shortcut
+        * 4 instance: "PetSafe Remove" shortcut
         * 8 instances: "PetSafe Add" shortcut
       * Enter your password directly into the new Password field.
     * If you use an SSH key:
