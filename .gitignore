@@ -3,6 +3,6 @@ __pycache__/
 ARCHIVED*
 config/*
 git_update.log
-logs/
+logs/*
 setup/__pycache__/
 tmp/
