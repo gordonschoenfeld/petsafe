@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Copyright (c) 2026 Gordon Schoenfeld
+# Licensed under the MIT License.
+# See LICENSE file in the project root for full license information.
+
 # --- CONFIGURATION ---
 # Get the absolute path of the directory where THIS script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"

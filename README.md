@@ -1,3 +1,9 @@
+<!-- 
+# Copyright (c) 2026 Gordon Schoenfeld
+# Licensed under the MIT License.
+# See LICENSE file in the project root for full license information.
+-->
+
 # What this library does
 If you have PetSafe feeders, this library enables you to
 1. securely schedule feedings starting ***from*** a date ***to*** a date
@@ -153,4 +159,6 @@ See the Limitations section, above.
 
 
 # Copyright
-TODO
+Copyright (c) 2026 Gordon Schoenfeld
+
+Licensed under the MIT License. See LICENSE file in the project root for full license information.
