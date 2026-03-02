@@ -8,10 +8,12 @@
 # This script keeps the server's code up to date.
 # This script runs a `git pull`.
 
-# 1. Go to the project directory
-cd ***REDACTED*** || exit
+# 1. Get project directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-# 2. Pull the latest changes silently
-# We log output to a file inside the directory so you can debug later
-echo "$(date "+%Y-%m-%d %H:%M") - Starting update" >> ***REDACTED***/logs/git_update.log
-git pull origin main >> ***REDACTED***/logs/git_update.log 2>&1
+# 2. Go to the project directory
+cd $SCRIPT_DIR || exit
+
+# 3. Pull the latest changes and log output to a file so you can debug later
+echo "$(date "+%Y-%m-%d %H:%M") - Starting update" >> $SCRIPT_DIR/logs/git_update.log
+git pull origin main >> $SCRIPT_DIR/logs/git_update.log 2>&1
