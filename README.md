@@ -9,7 +9,7 @@ If you have PetSafe feeders, this library enables you to
 1. securely schedule feedings starting ***from*** a date ***to*** a date
 1. securely schedule & cancel feedings for ***multiple feeders*** simultaneously (and with different amounts!)
 
-It's useful for trips: you currently need to remember to schedule feedings when your trip starts, and then *again* you'll need to remember to cancel it. Well remember no more: with this library, you can pre-set start & end dates whenever!
+This is especially useful for trips: you currently need to remember to schedule feedings when your trip starts, and then *again* you'll need to remember to cancel it. Well remember no more: with this library, you can pre-set start & end dates whenever!
 
 
 
