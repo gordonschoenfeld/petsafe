@@ -46,9 +46,8 @@ See guide here: https://www.digitalocean.com/community/tutorials/how-to-use-ssh-
 
 ## 1. Clone this repo to your machine
 * Access the Unix-based device (e.g. Mac, Raspberry Pi) that these functions will run off of. SSH into it if necessary.
-* In terminal:
+* In terminal: `cd` into your preferred parent folder path, then:
 ```
-cd <YOUR/PREFERRED/PARENT/FOLDER/PATH>
 git clone https://github.com/gordonschoenfeld/petsafe
 ```
 If asked, enter your github credentials.
