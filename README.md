@@ -137,7 +137,7 @@ To use this program, **run in terminal: `python3 petsafe_main.py`**, then follow
 Unix-based OSs (including macOS, Linux, and Raspberry Pi) are supported. All scheduling functions are built in Crontab, which is Unix-specific.
 
 ## B. Is this secure?
-It's more secure than your PetSafe app is:
+It's **more** secure than your PetSafe app is:
 * Scheduled feeding information is stored only on your server, then at feeding time, your server sends a one-off request to PetSafe directly to "feed now". No data goes to a 3rd party.
 * Config files (with feeder names, feeding times, and SSH login data) live on your local machine, not on PetSafe's servers.
 
@@ -154,7 +154,12 @@ As a workaround, this library includes app-scheduled feeds when viewing (for con
 ## E. Why aren't my scheduled feedings actually triggering?
 See the Limitations section, above.
 
-
+## F. Can I get this library to automatically pull updates from GitHub?
+Yes! In terminal, enter `crontab -e`, then:
+```
+# [PetSafe] Update codebase every week:
+0 0 * * 0 /usr/bin/python3 {YOUR_REPO_PATH}/logs/track_traffic.py
+```
 
 
 # Copyright
