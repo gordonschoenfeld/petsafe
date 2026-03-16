@@ -128,6 +128,8 @@ To use this program, **run in terminal: `python3 petsafe_main.py`**, then follow
   * Because of this, running this on an always-on server (e.g. Raspberry Pi) is strongly recommended.
 * Feedings scheduled through this library cannot be seen or edited from the PetSafe app.
 * Feedings scheduled through the PetSafe app cannot be edited from this library. (They can, however, be viewed).
+* Feedings for more than 1 cup (8 units) are not supported.
+  * Workaround: do multiple feedings separated by a minute.
 
 
 
