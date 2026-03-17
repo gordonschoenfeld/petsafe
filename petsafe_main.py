@@ -112,15 +112,16 @@ def fetch_feeder_info() -> dict:
 # --- TRANSLATE FEEDER NUMBER INTO ID ---
 def get_id_by_number(clean_data, target_number) -> int | None:
     # Force target to a string to match the data format ('1' vs 1)
-    target_number: str | int = str(target_number)
+    target_number = str(target_number)
+
+    if target_number == 'all':
+        return 'all'
 
     for feeder_id, data in clean_data.items():
         if data['feeder_number'] == target_number:
             return feeder_id
-        elif target_number == 'all':
-            return 'all'
-        else:
-            return None  # Return None if not found
+
+    return None  # Return None if not found
 
 
 # --- INPUT VALIDATION SUB-FUNCTIONS ---
@@ -490,6 +491,10 @@ def set_expiry(expiry_date: tuple[str], hour: str, minute: str, amount: int | st
 
 # -- 🔎 FIND SCHEDULE --
 def find_schedule(hour: str, minute: str, feeder_number: int, clean_data: dict, all_schedules: dict) -> dict | None:
+    # TODO: fix error...
+    # ⚠️ ERROR: Feeder number 2 not found.
+    # happened with end date same @ all devices
+
     # 1. Resolve Feeder ID and Name
     feeder_id = get_id_by_number(clean_data, feeder_number)
     if not feeder_id:
