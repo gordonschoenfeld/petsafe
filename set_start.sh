@@ -42,7 +42,10 @@ fi
 # --- CONSTRUCT THE COMMANDS ---
 
 # We use $SCRIPT_DIR to ensure cron finds the file.
-DO_WORK="/bin/bash $SCRIPT_DIR/add_scheduled_feed.sh $TARGET_HOUR_INT $TARGET_MIN_INT $FEEDER_NUM $AMOUNT"
+# We use Python to sleep for a random float between 0 and 20 seconds.
+# This prevents race conditions by spreading execution across millions of possible start times.
+RANDOM_SLEEP="import time,random; time.sleep(random.random() * 20)"
+DO_WORK="python3 -c '$RANDOM_SLEEP' && /bin/bash $SCRIPT_DIR/add_scheduled_feed.sh $TARGET_HOUR_INT $TARGET_MIN_INT $FEEDER_NUM $AMOUNT"
 
 # The Self-Destruct
 # We redirect output to /dev/null to keep cron silent on success
