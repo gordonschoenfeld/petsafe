@@ -117,7 +117,10 @@ def get_id_by_number(clean_data, target_number) -> int | None:
     for feeder_id, data in clean_data.items():
         if data['feeder_number'] == target_number:
             return feeder_id
-    return None  # Return None if not found
+        elif target_number == 'all':
+            return 'all'
+        else:
+            return None  # Return None if not found
 
 
 # --- INPUT VALIDATION SUB-FUNCTIONS ---
@@ -681,22 +684,32 @@ def task_input() -> None:
             return task_input()
 
         # 2. Check for existing entry
-        matching_results_blob = find_schedule(
-            hour, minute, feeder_number, clean_data, all_schedules)
-        # if matching entry, confirm continue with user
-        if matching_results_blob is not None:
-            date_str = matching_results_blob['date_str']
-            prompt_msg = f"Entry exists ({date_str}). Proceed? (Y/N): " if date_str else "Entry exists. Proceed? (Y/N): "
+        if feeder_number == "all":
+            # Check if a schedule exists for this time on ANY feeder
+            any_existing = any(find_schedule(
+                hour, minute, key, clean_data, all_schedules) for key in feeders_list.keys())
 
-            if input(prompt_msg).strip().lower() not in ['y', 'yes']:
-                print("Exiting program.")
-                exit()
-            else:
-                # Use dynamic loop for removals too
-                if feeder_number == "all":
+            if any_existing:
+                prompt_msg = f"A schedule already exists at this time for one or more feeders. Overwrite all? (Y/N): "
+                if input(prompt_msg).strip().lower() not in ['y', 'yes']:
+                    print("Exiting without making changes.")
+                    exit()
+                else:
+                    # User confirmed overwrite, so remove all existing schedules at that time
                     for key in feeders_list.keys():
                         remove_schedule(hour, minute, key,
                                         clean_data, all_schedules)
+        else:  # single feeder
+            matching_results_blob = find_schedule(
+                hour, minute, feeder_number, clean_data, all_schedules)
+            # if matching entry, confirm continue with user
+            if matching_results_blob is not None:
+                date_str = matching_results_blob['date_str']
+                prompt_msg = f"Entry exists ({date_str}). Proceed? (Y/N): " if date_str else "Entry exists. Proceed? (Y/N): "
+
+                if input(prompt_msg).strip().lower() not in ['y', 'yes']:
+                    print("Exiting program.")
+                    exit()
                 else:
                     remove_schedule(hour, minute, feeder_number,
                                     clean_data, all_schedules)
